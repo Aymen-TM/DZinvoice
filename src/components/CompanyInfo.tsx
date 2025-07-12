@@ -24,7 +24,7 @@ export default function CompanyInfo({ company, onCompanyChange }: CompanyInfoPro
           </svg>
         </div>
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">Informations de l'entreprise</h2>
+          <h2 className="text-3xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">Informations de l&apos;entreprise</h2>
           <p className="text-gray-600 group-hover:text-gray-700 transition-colors duration-300">Renseignez les détails de votre entreprise</p>
         </div>
       </div>

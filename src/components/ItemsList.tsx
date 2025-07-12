@@ -113,7 +113,7 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
             </svg>
           </div>
           <p className="text-gray-500 text-xl font-medium mb-2">Aucun article ajouté</p>
-          <p className="text-gray-400">Cliquez sur "Ajouter un article" pour commencer</p>
+          <p className="text-gray-400">Cliquez sur &quot;Ajouter un article&quot; pour commencer</p>
         </div>
       ) : (
         <>

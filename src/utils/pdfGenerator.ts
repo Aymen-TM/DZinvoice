@@ -59,7 +59,7 @@ export const generateInvoicePDF = async (invoiceData: InvoiceData) => {
   const dateX = numeroX + metaBoxWidth + metaGap;
   const pageX = dateX + metaBoxWidth + metaGap;
 
-  const drawCenteredText = (text: string, fontObj: any, size: number, x: number, y: number, boxWidth: number, color = rgb(0, 0, 0)) => {
+  const drawCenteredText = (text: string, fontObj: typeof font, size: number, x: number, y: number, boxWidth: number, color = rgb(0, 0, 0)) => {
     const textWidth = fontObj.widthOfTextAtSize(text, size);
     const textX = x + (boxWidth - textWidth) / 2;
     page.drawText(text, { x: textX, y, size, font: fontObj, color });
