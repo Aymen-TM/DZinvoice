@@ -32,14 +32,14 @@ export default function CompanyInfo({ company, onCompanyChange }: CompanyInfoPro
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2 group/item">
           <label className="block text-sm font-semibold text-gray-700 mb-2 group-hover/item:text-blue-600 transition-colors duration-200">
-            Nom de l'entreprise *
+            Nom de l&apos;entreprise *
           </label>
           <input
             type="text"
             value={company.companyName}
             onChange={(e) => handleChange('companyName', e.target.value)}
             className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm hover:bg-white/70 focus:bg-white/90 group-hover/item:border-blue-300"
-            placeholder="Nom de l'entreprise"
+            placeholder="Nom de l&apos;entreprise"
           />
         </div>
 
