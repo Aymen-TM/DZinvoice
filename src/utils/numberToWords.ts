@@ -1,6 +1,6 @@
 const units = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'];
 const teens = ['dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
-const tens = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingt', 'quatre-vingt-dix'];
+const tens = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', '', 'quatre-vingt', ''];
 
 function convertLessThanOneThousand(num: number): string {
   if (num === 0) return '';
@@ -13,21 +13,33 @@ function convertLessThanOneThousand(num: number): string {
     return teens[num - 10];
   }
 
-  if (num < 100) {
+  if (num < 70) {
     if (num % 10 === 0) {
       return tens[Math.floor(num / 10)];
     }
-    if (num < 70) {
-      return tens[Math.floor(num / 10)] + '-' + units[num % 10];
+    return tens[Math.floor(num / 10)] + '-' + units[num % 10];
+  }
+
+  if (num < 80) {
+    // 70-79: soixante-dix, soixante-onze, ...
+    if (num === 71) return 'soixante-et-onze';
+    return 'soixante-' + teens[num - 70];
+  }
+
+  if (num < 100) {
+    // 80-99: quatre-vingt, quatre-vingt-un, ...
+    if (num === 80) return 'quatre-vingts';
+    if (num === 81) return 'quatre-vingt-un';
+    if (num < 90) {
+      return 'quatre-vingt-' + units[num % 10];
     }
-    if (num < 80) {
-      return 'soixante-' + teens[num - 60];
-    }
-    return 'quatre-vingt-' + units[num % 10];
+    // 90-99: quatre-vingt-dix, quatre-vingt-onze, ...
+    if (num === 91) return 'quatre-vingt-onze';
+    return 'quatre-vingt-' + teens[num - 90];
   }
 
   if (num < 200) {
-    return 'cent ' + convertLessThanOneThousand(num % 100);
+    return 'cent' + (num === 100 ? '' : ' ' + convertLessThanOneThousand(num % 100));
   }
 
   return units[Math.floor(num / 100)] + ' cent' + (num % 100 === 0 ? '' : ' ' + convertLessThanOneThousand(num % 100));
