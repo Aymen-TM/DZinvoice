@@ -94,14 +94,14 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
           onClick={addItem}
           disabled={isAddingItem}
           className={`
-            bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all duration-300 font-semibold flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 w-full sm:w-auto justify-center
+            bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-4 sm:px-6 py-3 sm:py-3 rounded-xl transition-all duration-300 font-semibold flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 w-full sm:w-auto min-h-[48px] sm:min-h-[52px]
             ${isAddingItem ? 'opacity-50 cursor-not-allowed' : ''}
           `}
         >
-          <svg className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 ${isAddingItem ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className={`w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-300 ${isAddingItem ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
-          <span className="text-sm sm:text-base">{isAddingItem ? 'Ajout...' : 'Ajouter un article'}</span>
+          <span className="text-sm sm:text-base font-medium">{isAddingItem ? 'Ajout...' : 'Ajouter un article'}</span>
         </button>
       </div>
 
@@ -118,95 +118,143 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
       ) : (
         <>
           {/* Mobile-friendly table layout */}
-          <div className="space-y-4">
+          <div className="space-y-4 sm:space-y-6">
             {items.map((item, index) => (
               <div 
                 key={item.id} 
                 className={`
                   bg-white/50 backdrop-blur-sm border border-gray-200 rounded-xl p-4 sm:p-6 hover:shadow-lg transition-all duration-300 transform hover:scale-[1.01] sm:hover:scale-[1.02] hover:border-orange-300
-                  ${isAddingItem && index === items.length - 1 ? 'animate-pulse bg-orange-50/50' : ''}
+                  ${isAddingItem && index === items.length - 1 ? 'animate-pulse bg-orange-50/50 border-orange-300' : ''}
                 `}
               >
                 {/* Mobile: Stacked layout */}
-                <div className="block sm:hidden space-y-3">
+                <div className="block sm:hidden space-y-4">
+                  {/* Item Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-6 h-6 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">{index + 1}</span>
+                      </div>
+                      <span className="text-sm font-semibold text-gray-700">Article {index + 1}</span>
+                    </div>
+                    <button
+                      onClick={() => removeItem(item.id)}
+                      className="text-red-500 hover:text-red-700 transition-all duration-300 p-2 rounded-lg hover:bg-red-50 transform hover:scale-110 active:scale-95"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  {/* Reference and Quantity Row */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-gray-600">Référence</label>
+                      <label className="text-xs font-semibold text-gray-600 flex items-center space-x-1">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                        </svg>
+                        <span>Référence</span>
+                      </label>
                       <input
                         type="text"
                         value={item.reference}
                         onChange={(e) => updateItem(item.id, 'reference', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white"
+                        className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white"
                         placeholder="Référence"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-gray-600">Quantité</label>
+                      <label className="text-xs font-semibold text-gray-600 flex items-center space-x-1">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                        </svg>
+                        <span>Quantité</span>
+                      </label>
                       <input
                         type="number"
                         min="0"
                         step="0.01"
                         value={item.quantity}
                         onChange={(e) => updateItem(item.id, 'quantity', parseFloat(e.target.value) || 0)}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white"
+                        className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white"
                       />
                     </div>
                   </div>
                   
+                  {/* Designation */}
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-gray-600">Désignation</label>
+                    <label className="text-xs font-semibold text-gray-600 flex items-center space-x-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <span>Désignation</span>
+                    </label>
                     <input
                       type="text"
                       value={item.designation}
                       onChange={(e) => updateItem(item.id, 'designation', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white"
+                      className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white"
                       placeholder="Désignation"
                     />
                   </div>
                   
+                  {/* Price, Amount, and TVA Row */}
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-gray-600">Prix unit.</label>
+                      <label className="text-xs font-semibold text-gray-600 flex items-center space-x-1">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                        </svg>
+                        <span>Prix unit.</span>
+                      </label>
                       <input
                         type="number"
                         min="0"
                         step="0.01"
                         value={item.unitPrice}
                         onChange={(e) => updateItem(item.id, 'unitPrice', parseFloat(e.target.value) || 0)}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white"
+                        className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-gray-600">Montant</label>
+                      <label className="text-xs font-semibold text-gray-600 flex items-center space-x-1">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        <span>Montant</span>
+                      </label>
                       <input
                         type="number"
                         value={item.amount.toFixed(2)}
                         readOnly
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50/70"
+                        className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm bg-gray-50/70 font-semibold"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-gray-600">TVA %</label>
+                      <label className="text-xs font-semibold text-gray-600 flex items-center space-x-1">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        <span>TVA %</span>
+                      </label>
                       <input
                         type="number"
                         min="0"
                         max="100"
                         value={item.tva}
                         onChange={(e) => updateItem(item.id, 'tva', parseFloat(e.target.value) || 0)}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white"
+                        className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white"
                       />
                     </div>
                   </div>
-                  
-                  <div className="flex justify-end">
-                    <button
-                      onClick={() => removeItem(item.id)}
-                      className="text-red-500 hover:text-red-700 transition-all duration-300 p-2 rounded-lg hover:bg-red-50 transform hover:scale-110 active:scale-95"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
+
+                  {/* Item Total */}
+                  <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-3 border border-orange-200">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-semibold text-gray-700">Total article:</span>
+                      <span className="text-lg font-bold text-orange-600">{item.amount.toFixed(2)} DA</span>
+                    </div>
                   </div>
                 </div>
 
@@ -290,8 +338,11 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
           {/* Remise Input */}
           <div className="mt-8 sm:mt-10 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 shadow-inner">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-              <label className="text-sm font-semibold text-gray-700 whitespace-nowrap">
-                Remise (%):
+              <label className="text-sm font-semibold text-gray-700 whitespace-nowrap flex items-center space-x-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                </svg>
+                <span>Remise (%):</span>
               </label>
               <input
                 type="number"
@@ -299,7 +350,7 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
                 max="100"
                 value={remise}
                 onChange={(e) => setRemise(parseFloat(e.target.value) || 0)}
-                className="w-full sm:w-32 px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white"
+                className="w-full sm:w-32 px-3 sm:px-4 py-3 sm:py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white"
               />
             </div>
           </div>
