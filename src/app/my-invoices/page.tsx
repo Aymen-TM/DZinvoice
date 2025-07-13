@@ -253,25 +253,9 @@ export default function MyInvoicesPage() {
                 >
                   + Nouvelle facture
                 </Link>
-                {/* FAB on mobile */}
-                <Link
-                  href="/create-invoice"
-                  className="sm:hidden fixed bottom-6 right-6 bg-gradient-to-r from-indigo-500 to-blue-600 text-white rounded-full shadow-lg p-4 flex items-center justify-center text-2xl font-bold hover:from-indigo-600 hover:to-blue-700 transition-colors z-40"
-                  aria-label="Nouvelle facture"
-                >
-                  +
-                </Link>
               </div>
             ) : (
               <>
-                {/* FAB on mobile */}
-                <Link
-                  href="/create-invoice"
-                  className="sm:hidden fixed bottom-6 right-6 bg-gradient-to-r from-indigo-500 to-blue-600 text-white rounded-full shadow-lg p-4 flex items-center justify-center text-2xl font-bold hover:from-indigo-600 hover:to-blue-700 transition-colors z-40"
-                  aria-label="Nouvelle facture"
-                >
-                  +
-                </Link>
                 {/* Mobile Card List */}
                 <div className="sm:hidden space-y-4">
                   {filteredInvoices.map((invoice) => (
