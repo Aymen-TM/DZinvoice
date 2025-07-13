@@ -176,12 +176,17 @@ export default function MyInvoicesPage() {
     const spaceBelow = window.innerHeight - rect.bottom;
     const direction = spaceBelow < menuHeight ? 'up' : 'down';
     setOpenMenu(id);
-    setMenuPortal({
-      id,
-      top: direction === 'up' ? rect.top - menuHeight - 8 : rect.bottom + 8,
-      left: rect.right - 224, // 224px = 14rem (menu width)
-      direction,
-    });
+    if (window.innerWidth < 640) {
+      // Mobile: center horizontally, open below or above button
+      const top = direction === 'up' ? rect.top - menuHeight - 8 : rect.bottom + 8;
+      const left = window.innerWidth / 2;
+      setMenuPortal({ id, top, left, direction });
+    } else {
+      // Desktop: align to button
+      const top = direction === 'up' ? rect.top - menuHeight - 8 : rect.bottom + 8;
+      const left = rect.right - 224; // 224px = 14rem (menu width)
+      setMenuPortal({ id, top, left, direction });
+    }
   };
 
   // Filter invoices by search and tab
@@ -273,7 +278,7 @@ export default function MyInvoicesPage() {
                     <div
                       key={invoice.id}
                       ref={highlightId === invoice.id ? highlightRef : undefined}
-                      className={`bg-white rounded-xl shadow p-5 text-base flex flex-col gap-3 relative transition-all duration-500 ${highlightId === invoice.id ? 'ring-4 ring-green-400' : ''}`}
+                      className={`bg-white rounded-xl shadow p-4 flex flex-col gap-2 relative transition-all duration-500 ${highlightId === invoice.id ? 'ring-4 ring-green-400' : ''}`}
                     >
                       <div className="flex items-center justify-between">
                         <div>
@@ -292,71 +297,72 @@ export default function MyInvoicesPage() {
                               <circle cx="12" cy="18" r="1.5" />
                             </svg>
                           </button>
-                          {openMenu === invoice.id && menuPortal && menuPortal.id === invoice.id &&
+                          {/* Only render the menu portal for mobile here */}
+                          {openMenu === invoice.id && menuPortal && menuPortal.id === invoice.id && window.innerWidth < 640 &&
                             ReactDOM.createPortal(
-                              <div
-                                ref={menuPortalRef}
-                                onClick={e => e.stopPropagation()}
-                                className={`fixed z-50 bg-white border border-slate-100 rounded-lg shadow-lg animate-fade-in flex flex-col text-base py-2 overflow-visible
-                                  w-56 sm:w-56 w-full max-w-xs left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0
-                                  ${menuPortal.direction === 'up' ? '' : ''}`}
-                                style={{
-                                  top: menuPortal.top,
-                                  left: window.innerWidth < 640 ? '50%' : menuPortal.left, // center on mobile
-                                  minWidth: window.innerWidth < 640 ? undefined : '14rem',
-                                  maxWidth: window.innerWidth < 640 ? '20rem' : undefined,
-                                  width: window.innerWidth < 640 ? '100%' : undefined,
-                                  padding: '0.5rem 0.25rem',
-                                  transform: window.innerWidth < 640 ? 'translateX(-50%)' : undefined,
-                                }}
-                              >
-                                {invoice.status === 'paid' ? (
+                              <>
+                                <div
+                                  className="fixed inset-0 z-40 bg-black/30"
+                                  onClick={() => { setOpenMenu(null); setMenuPortal(null); }}
+                                />
+                                <div
+                                  ref={menuPortalRef}
+                                  onClick={e => e.stopPropagation()}
+                                  className="fixed z-50 left-0 right-0 bottom-0 bg-white rounded-t-2xl shadow-2xl flex flex-col text-base py-2 w-full max-w-full mx-auto"
+                                  style={{
+                                    maxHeight: '60vh',
+                                    overflowY: 'auto',
+                                    padding: '0.5rem 0.25rem',
+                                  }}
+                                >
+                                  {invoice.status === 'paid' ? (
+                                    <button
+                                      className="w-full flex items-center gap-3 text-left px-5 py-4 min-h-[48px] text-base active:bg-blue-100 rounded-2xl"
+                                      onClick={() => { setOpenMenu(null); setMenuPortal(null); handleMarkUnpaid(invoice.id); }}
+                                      aria-label="Marquer comme non payée"
+                                    >
+                                      <span>🔄</span> Marquer comme non payée
+                                    </button>
+                                  ) : (
+                                    <button
+                                      className="w-full flex items-center gap-3 text-left px-5 py-4 min-h-[48px] text-base active:bg-blue-100 rounded-2xl"
+                                      onClick={() => { setOpenMenu(null); setMenuPortal(null); handleMarkPaid(invoice.id); }}
+                                      disabled={invoice.status === 'paid'}
+                                      aria-label="Marquer comme payée"
+                                    >
+                                      <span>✔️</span> Marquer comme payée
+                                    </button>
+                                  )}
                                   <button
-                                    className="w-full flex items-center gap-3 text-left px-5 py-4 hover:bg-blue-50 text-blue-700 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-base min-h-[44px]"
-                                    onClick={() => { setOpenMenu(null); setMenuPortal(null); handleMarkUnpaid(invoice.id); }}
-                                    aria-label="Marquer comme non payée"
+                                    className="w-full flex items-center gap-3 text-left px-5 py-4 min-h-[48px] text-base active:bg-blue-100 rounded-2xl"
+                                    onClick={() => { setOpenMenu(null); setMenuPortal(null); handleGetLink(invoice.id); }}
+                                    aria-label="Obtenir le lien"
                                   >
-                                    <span>🔄</span> Marquer comme non payée
+                                    <span>🔗</span> Obtenir le lien
                                   </button>
-                                ) : (
                                   <button
-                                    className="w-full flex items-center gap-3 text-left px-5 py-4 hover:bg-blue-50 text-blue-700 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-base min-h-[44px]"
-                                    onClick={() => { setOpenMenu(null); setMenuPortal(null); handleMarkPaid(invoice.id); }}
-                                    disabled={invoice.status === 'paid'}
-                                    aria-label="Marquer comme payée"
+                                    className="w-full flex items-center gap-3 text-left px-5 py-4 min-h-[48px] text-base active:bg-blue-100 rounded-2xl"
+                                    onClick={() => { setOpenMenu(null); setMenuPortal(null); handleEmail(); }}
+                                    aria-label="Envoyer par email"
                                   >
-                                    <span>✔️</span> Marquer comme payée
+                                    <span>✉️</span> Envoyer par email
                                   </button>
-                                )}
-                                <button
-                                  className="w-full flex items-center gap-3 text-left px-5 py-4 hover:bg-blue-50 text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 text-base min-h-[44px]"
-                                  onClick={() => { setOpenMenu(null); setMenuPortal(null); handleGetLink(invoice.id); }}
-                                  aria-label="Obtenir le lien"
-                                >
-                                  <span>🔗</span> Obtenir le lien
-                                </button>
-                                <button
-                                  className="w-full flex items-center gap-3 text-left px-5 py-4 hover:bg-blue-50 text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 text-base min-h-[44px]"
-                                  onClick={() => { setOpenMenu(null); setMenuPortal(null); handleEmail(); }}
-                                  aria-label="Envoyer par email"
-                                >
-                                  <span>✉️</span> Envoyer par email
-                                </button>
-                                <button
-                                  className="w-full flex items-center gap-3 text-left px-5 py-4 hover:bg-blue-50 text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 text-base min-h-[44px]"
-                                  onClick={() => { setOpenMenu(null); setMenuPortal(null); handlePrint(); }}
-                                  aria-label="Imprimer"
-                                >
-                                  <span>🖨️</span> Imprimer
-                                </button>
-                                <button
-                                  className="w-full flex items-center gap-3 text-left px-5 py-4 hover:bg-red-50 text-red-600 rounded-b-lg border-t border-slate-100 focus:outline-none focus:ring-2 focus:ring-red-400 text-base min-h-[44px]"
-                                  onClick={() => { setOpenMenu(null); setMenuPortal(null); setConfirmDeleteId(invoice.id); }}
-                                  aria-label="Supprimer"
-                                >
-                                  <span>🗑️</span> Supprimer
-                                </button>
-                              </div>,
+                                  <button
+                                    className="w-full flex items-center gap-3 text-left px-5 py-4 min-h-[48px] text-base active:bg-blue-100 rounded-2xl"
+                                    onClick={() => { setOpenMenu(null); setMenuPortal(null); handlePrint(); }}
+                                    aria-label="Imprimer"
+                                  >
+                                    <span>🖨️</span> Imprimer
+                                  </button>
+                                  <button
+                                    className="w-full flex items-center gap-3 text-left px-5 py-4 min-h-[48px] text-base active:bg-red-100 rounded-2xl"
+                                    onClick={() => { setOpenMenu(null); setMenuPortal(null); setConfirmDeleteId(invoice.id); }}
+                                    aria-label="Supprimer"
+                                  >
+                                    <span>🗑️</span> Supprimer
+                                  </button>
+                                </div>
+                              </>,
                               document.body
                             )
                           }
@@ -414,7 +420,8 @@ export default function MyInvoicesPage() {
                                     <circle cx="12" cy="18" r="1.5" />
                                   </svg>
                                 </button>
-                                {openMenu === invoice.id && menuPortal && menuPortal.id === invoice.id &&
+                                {/* Only render the menu portal for desktop here */}
+                                {openMenu === invoice.id && menuPortal && menuPortal.id === invoice.id && window.innerWidth >= 640 &&
                                   ReactDOM.createPortal(
                                     <div
                                       ref={menuPortalRef}
@@ -432,9 +439,10 @@ export default function MyInvoicesPage() {
                                         transform: window.innerWidth < 640 ? 'translateX(-50%)' : undefined,
                                       }}
                                     >
+                                      {/* Menu items */}
                                       {invoice.status === 'paid' ? (
                                         <button
-                                          className="w-full flex items-center gap-3 text-left px-5 py-4 hover:bg-blue-50 text-blue-700 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-base min-h-[44px]"
+                                          className="w-full flex items-center gap-3 text-left px-5 py-3 hover:bg-blue-50 text-blue-700 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
                                           onClick={() => { setOpenMenu(null); setMenuPortal(null); handleMarkUnpaid(invoice.id); }}
                                           aria-label="Marquer comme non payée"
                                         >
@@ -442,7 +450,7 @@ export default function MyInvoicesPage() {
                                         </button>
                                       ) : (
                                         <button
-                                          className="w-full flex items-center gap-3 text-left px-5 py-4 hover:bg-blue-50 text-blue-700 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-base min-h-[44px]"
+                                          className="w-full flex items-center gap-3 text-left px-5 py-3 hover:bg-blue-50 text-blue-700 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
                                           onClick={() => { setOpenMenu(null); setMenuPortal(null); handleMarkPaid(invoice.id); }}
                                           disabled={invoice.status === 'paid'}
                                           aria-label="Marquer comme payée"
@@ -451,28 +459,28 @@ export default function MyInvoicesPage() {
                                         </button>
                                       )}
                                       <button
-                                        className="w-full flex items-center gap-3 text-left px-5 py-4 hover:bg-blue-50 text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 text-base min-h-[44px]"
+                                        className="w-full flex items-center gap-3 text-left px-5 py-3 hover:bg-blue-50 text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
                                         onClick={() => { setOpenMenu(null); setMenuPortal(null); handleGetLink(invoice.id); }}
                                         aria-label="Obtenir le lien"
                                       >
                                         <span>🔗</span> Obtenir le lien
                                       </button>
                                       <button
-                                        className="w-full flex items-center gap-3 text-left px-5 py-4 hover:bg-blue-50 text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 text-base min-h-[44px]"
+                                        className="w-full flex items-center gap-3 text-left px-5 py-3 hover:bg-blue-50 text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
                                         onClick={() => { setOpenMenu(null); setMenuPortal(null); handleEmail(); }}
                                         aria-label="Envoyer par email"
                                       >
                                         <span>✉️</span> Envoyer par email
                                       </button>
                                       <button
-                                        className="w-full flex items-center gap-3 text-left px-5 py-4 hover:bg-blue-50 text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 text-base min-h-[44px]"
+                                        className="w-full flex items-center gap-3 text-left px-5 py-3 hover:bg-blue-50 text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
                                         onClick={() => { setOpenMenu(null); setMenuPortal(null); handlePrint(); }}
                                         aria-label="Imprimer"
                                       >
                                         <span>🖨️</span> Imprimer
                                       </button>
                                       <button
-                                        className="w-full flex items-center gap-3 text-left px-5 py-4 hover:bg-red-50 text-red-600 rounded-b-lg border-t border-slate-100 focus:outline-none focus:ring-2 focus:ring-red-400 text-base min-h-[44px]"
+                                        className="w-full flex items-center gap-3 text-left px-5 py-3 hover:bg-red-50 text-red-600 rounded-b-lg border-t border-slate-100 focus:outline-none focus:ring-2 focus:ring-red-400"
                                         onClick={() => { setOpenMenu(null); setMenuPortal(null); setConfirmDeleteId(invoice.id); }}
                                         aria-label="Supprimer"
                                       >
