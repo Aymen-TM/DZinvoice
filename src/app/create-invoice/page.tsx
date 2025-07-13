@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Company, Client, InvoiceMeta, Item, Totals, InvoiceData } from '@/types/invoice';
 import CompanyInfo from '@/components/CompanyInfo';
 import ClientInfo from '@/components/ClientInfo';
 import InvoiceMetaComponent from '@/components/InvoiceMeta';
 import ItemsList from '@/components/ItemsList';
 import GeneratePDFButton from '@/components/GeneratePDFButton';
+import { generateNextInvoiceNumber } from '@/utils/invoiceNumberGenerator';
 
 export default function CreateInvoicePage() {
   const [company, setCompany] = useState<Company>({
@@ -43,15 +44,23 @@ export default function CreateInvoicePage() {
     notes: '',
   });
 
+  // Auto-generate invoice number on component mount
+  useEffect(() => {
+    const nextInvoiceNumber = generateNextInvoiceNumber();
+    setMeta(prev => ({
+      ...prev,
+      invoiceNumber: nextInvoiceNumber,
+    }));
+  }, []);
+
   const [items, setItems] = useState<Item[]>([]);
 
   const [totals, setTotals] = useState<Totals>({
     montantHT: 0,
     remise: 0,
     tva: 0,
-    timbre: 100,
-    montantTTC: 100,
-    amountInWords: 'Cent dinars',
+    montantTTC: 0,
+    amountInWords: 'Zéro dinars',
   });
 
   const invoiceData: InvoiceData = {

@@ -29,9 +29,15 @@ export default function GeneratePDFButton({ invoiceData }: GeneratePDFButtonProp
       setPdfBytes(bytes);
       setIsSuccess(true);
 
+      // Validate required fields
+      if (!invoiceData.meta.invoiceNumber || invoiceData.meta.invoiceNumber.trim() === '') {
+        alert('Le numéro de facture est obligatoire');
+        return;
+      }
+
       // Save invoice to localStorage
       const invoiceToSave = {
-        id: invoiceData.meta.invoiceNumber || Date.now().toString(),
+        id: invoiceData.meta.invoiceNumber,
         clientName: invoiceData.client.clientName,
         date: invoiceData.meta.date,
         total: invoiceData.totals.montantTTC,

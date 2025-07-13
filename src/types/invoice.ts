@@ -46,7 +46,6 @@ export interface Totals {
   montantHT: number;
   remise: number;
   tva: number;
-  timbre: number;
   montantTTC: number;
   amountInWords: string;
 }

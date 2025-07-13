@@ -183,7 +183,7 @@ export const generateInvoicePDF = async (invoiceData: InvoiceData) => {
   currentY -= tableBoxHeight + 20;
 
   // === Totals Box ===
-  const totalsBoxHeight = 5 * lineHeight + 20;
+  const totalsBoxHeight = 4 * lineHeight + 20;
   page.drawRectangle({
     x: 340,
     y: currentY - totalsBoxHeight,
@@ -199,8 +199,6 @@ export const generateInvoicePDF = async (invoiceData: InvoiceData) => {
   page.drawText(`Remise: ${totals.remise.toFixed(2)} DA`, { x: 350, y: totalY, size: 11, font });
   totalY -= lineHeight;
   page.drawText(`T.V.A: ${totals.tva.toFixed(2)} DA`, { x: 350, y: totalY, size: 11, font });
-  totalY -= lineHeight;
-  page.drawText(`Timbre: ${totals.timbre.toFixed(2)} DA`, { x: 350, y: totalY, size: 11, font });
   totalY -= lineHeight;
   page.drawText(`Montant T.T.C: ${totals.montantTTC.toFixed(2)} DA`, { x: 350, y: totalY, size: 12, font: boldFont });
 

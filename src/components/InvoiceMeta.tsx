@@ -1,6 +1,7 @@
 'use client';
 
 import { InvoiceMeta as InvoiceMetaType } from '@/types/invoice';
+import { generateNextInvoiceNumber } from '@/utils/invoiceNumberGenerator';
 
 interface InvoiceMetaProps {
   meta: InvoiceMetaType;
@@ -12,6 +13,14 @@ export default function InvoiceMeta({ meta, onMetaChange }: InvoiceMetaProps) {
     onMetaChange({
       ...meta,
       [field]: value,
+    });
+  };
+
+  const handleRegenerateInvoiceNumber = () => {
+    const nextInvoiceNumber = generateNextInvoiceNumber();
+    onMetaChange({
+      ...meta,
+      invoiceNumber: nextInvoiceNumber,
     });
   };
 
@@ -34,13 +43,25 @@ export default function InvoiceMeta({ meta, onMetaChange }: InvoiceMetaProps) {
           <label className="block text-sm font-semibold text-gray-700 mb-2 group-hover/item:text-purple-600 transition-colors duration-200">
             Numéro de facture *
           </label>
-          <input
-            type="text"
-            value={meta.invoiceNumber}
-            onChange={(e) => handleChange('invoiceNumber', e.target.value)}
-            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm hover:bg-white/70 focus:bg-white/90 group-hover/item:border-purple-300 text-sm sm:text-base"
-            placeholder="Numéro de facture"
-          />
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={meta.invoiceNumber}
+              onChange={(e) => handleChange('invoiceNumber', e.target.value)}
+              className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm hover:bg-white/70 focus:bg-white/90 group-hover/item:border-purple-300 text-sm sm:text-base"
+              placeholder="Numéro de facture"
+            />
+            <button
+              type="button"
+              onClick={handleRegenerateInvoiceNumber}
+              className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl hover:from-purple-600 hover:to-pink-700 transition-all duration-300 font-semibold text-sm sm:text-base flex items-center justify-center shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
+              title="Générer le prochain numéro"
+            >
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div className="space-y-2 group/item">

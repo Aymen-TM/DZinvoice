@@ -61,14 +61,12 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
     const remiseAmount = (montantHT * remise) / 100;
     const montantHTAfterRemise = montantHT - remiseAmount;
     const tva = items.reduce((sum, item) => sum + (item.amount * item.tva / 100), 0);
-    const timbre = 100; // Fixed timbre amount
-    const montantTTC = montantHTAfterRemise + tva + timbre;
+    const montantTTC = montantHTAfterRemise + tva;
 
     const newTotals: Totals = {
       montantHT,
       remise: remiseAmount,
       tva,
-      timbre,
       montantTTC,
       amountInWords: numberToFrenchWords(montantTTC),
     };
@@ -377,10 +375,6 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
                   <div className="flex justify-between items-center p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-all duration-200">
                     <span className="text-sm text-gray-600">TVA:</span>
                     <span className="font-semibold text-gray-900">{totals.tva.toFixed(2)} DA</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-all duration-200">
-                    <span className="text-sm text-gray-600">Timbre:</span>
-                    <span className="font-semibold text-gray-900">{totals.timbre.toFixed(2)} DA</span>
                   </div>
                   <div className="flex justify-between items-center p-3 sm:p-4 bg-gradient-to-r from-green-100 to-emerald-100 rounded-lg border-2 border-green-200">
                     <span className="text-base sm:text-lg font-bold text-gray-900">Montant TTC:</span>
