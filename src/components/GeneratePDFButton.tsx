@@ -17,7 +17,6 @@ export default function GeneratePDFButton({ invoiceData }: GeneratePDFButtonProp
   const [hasDownloaded, setHasDownloaded] = useState(false);
   const router = useRouter();
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [savedInvoiceId, setSavedInvoiceId] = useState<string | null>(null);
 
   const handleGeneratePDF = async () => {
     setIsGenerating(true);
@@ -55,7 +54,6 @@ export default function GeneratePDFButton({ invoiceData }: GeneratePDFButtonProp
 
       // Set highlight flag for Mes Factures
       localStorage.setItem('highlightInvoiceId', invoiceToSave.id);
-      setSavedInvoiceId(invoiceToSave.id);
       setShowSuccessModal(true);
 
       // Reset success state after 5 seconds

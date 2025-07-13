@@ -44,7 +44,6 @@ export default function MyInvoicesPage() {
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const highlightRef = useRef<HTMLDivElement | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [menuDirection, setMenuDirection] = useState<{ [key: string]: 'up' | 'down' }>({});
   const [menuPortal, setMenuPortal] = useState<{ id: string; top: number; left: number; direction: 'up' | 'down' } | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const menuPortalRef = useRef<HTMLDivElement | null>(null);
@@ -176,7 +175,6 @@ export default function MyInvoicesPage() {
     const menuHeight = 280; // estimated menu height in px
     const spaceBelow = window.innerHeight - rect.bottom;
     const direction = spaceBelow < menuHeight ? 'up' : 'down';
-    setMenuDirection((prev) => ({ ...prev, [id]: direction }));
     setOpenMenu(id);
     setMenuPortal({
       id,
