@@ -107,13 +107,13 @@ export default function MyInvoicesPage() {
       <div className="w-full max-w-4xl">
         <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-0 overflow-visible">
           {/* Tabs and header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 pt-6 pb-2 border-b border-slate-100 bg-gradient-to-r from-blue-50 to-indigo-50">
-            <div className="flex gap-2 mb-4 sm:mb-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-6 pt-6 pb-2 border-b border-slate-100 bg-gradient-to-r from-blue-50 to-indigo-50 gap-4 sm:gap-0">
+            <div className="flex flex-wrap gap-2 mb-2 sm:mb-0">
               {TABS.map((tab) => (
                 <button
                   key={tab.value}
                   onClick={() => setActiveTab(tab.value)}
-                  className={`px-4 py-2 rounded-full font-semibold text-sm transition-colors duration-200
+                  className={`px-3 sm:px-4 py-2 rounded-full font-semibold text-xs sm:text-sm transition-colors duration-200
                     ${activeTab === tab.value
                       ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow"
                       : "bg-white text-blue-700 border border-blue-100 hover:bg-blue-50"
@@ -123,17 +123,17 @@ export default function MyInvoicesPage() {
                 </button>
               ))}
             </div>
-            <div className="flex gap-2 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <input
                 type="text"
                 placeholder="Rechercher par client ou numéro..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="flex-1 px-4 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm shadow-sm"
+                className="flex-1 px-3 sm:px-4 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 text-xs sm:text-sm shadow-sm"
               />
               <Link
                 href="/create-invoice"
-                className="ml-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-blue-600 text-white rounded-lg font-semibold shadow hover:from-indigo-600 hover:to-blue-700 transition-colors text-sm flex items-center"
+                className="w-full sm:w-auto px-3 sm:px-4 py-2 bg-gradient-to-r from-indigo-500 to-blue-600 text-white rounded-lg font-semibold shadow hover:from-indigo-600 hover:to-blue-700 transition-colors text-xs sm:text-sm flex items-center justify-center"
               >
                 + Nouvelle facture
               </Link>
@@ -141,7 +141,7 @@ export default function MyInvoicesPage() {
           </div>
 
           {/* Invoice list or empty state */}
-          <div className="p-6 min-h-[300px] overflow-visible">
+          <div className="p-2 sm:p-6 min-h-[300px] overflow-visible">
             {filteredInvoices.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-60 text-center text-gray-400">
                 <svg className="w-12 h-12 mb-4 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 48 48">
@@ -151,104 +151,184 @@ export default function MyInvoicesPage() {
                 <div className="font-semibold text-lg text-blue-700 mb-1">Aucune facture trouvée</div>
                 <div className="text-sm text-gray-500 mb-4">Créez votre première facture pour l&apos;afficher ici.</div>
                 <Link
-                  href="/"
+                  href="/create-invoice"
                   className="inline-block px-5 py-2 bg-gradient-to-r from-indigo-500 to-blue-600 text-white rounded-lg font-semibold shadow hover:from-indigo-600 hover:to-blue-700 transition-colors text-sm"
                 >
-                  + New invoice
+                  + Nouvelle facture
                 </Link>
               </div>
             ) : (
-              <div className="overflow-visible">
-                <table className="min-w-full divide-y divide-slate-100 overflow-visible">
-                  <thead>
-                    <tr className="bg-gradient-to-r from-blue-50 to-indigo-50">
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">N° FACTURE</th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">CLIENT</th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">DATE</th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">TOTAL</th>
-                      <th className="px-4 py-2 text-center text-xs font-semibold text-blue-700 uppercase tracking-wider">ACTIONS</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-slate-50 overflow-visible">
-                    {filteredInvoices.map((invoice) => (
-                      <tr key={invoice.id} className="hover:bg-blue-50/50 transition-colors">
-                        <td className="px-4 py-3 font-mono text-sm text-blue-900">{invoice.id}</td>
-                        <td className="px-4 py-3 text-sm font-semibold text-gray-900">{invoice.clientName}</td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{new Date(invoice.date).toLocaleDateString()}</td>
-                        <td className="px-4 py-3 text-sm font-bold text-green-700">
-                          {invoice.total.toLocaleString()} DZD
-                          {invoice.status === 'paid' && (
-                            <div className="text-xs text-green-600 font-semibold mt-1">Payée</div>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-center relative overflow-visible">
-                          <div className="flex justify-center gap-2">
-                            {/* Dropdown menu button */}
-                            <div ref={el => { menuRefs.current[invoice.id] = el; }}>
-                              <button
-                                className="p-2 rounded-full hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                onClick={() => setOpenMenu(openMenu === invoice.id ? null : invoice.id)}
-                                aria-label="Actions"
-                              >
-                                <svg className="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <circle cx="12" cy="6" r="1.5" />
-                                  <circle cx="12" cy="12" r="1.5" />
-                                  <circle cx="12" cy="18" r="1.5" />
-                                </svg>
-                              </button>
-                              {/* Dropdown menu */}
-                              {openMenu === invoice.id && (
-                                <div className="absolute right-0 mt-2 w-40 bg-white border border-slate-100 rounded-lg shadow-lg z-50 animate-fade-in">
-                                  {invoice.status === 'paid' ? (
-                                    <button
-                                      className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 text-blue-700 rounded-t-lg"
-                                      onClick={() => handleMarkUnpaid(invoice.id)}
-                                    >
-                                      Marquer comme non payée
-                                    </button>
-                                  ) : (
-                                    <button
-                                      className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 text-blue-700 rounded-t-lg"
-                                      onClick={() => handleMarkPaid(invoice.id)}
-                                      disabled={invoice.status === 'paid'}
-                                    >
-                                      Marquer comme payée
-                                    </button>
-                                  )}
-                                  <button
-                                    className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 text-blue-700"
-                                    onClick={() => handleGetLink(invoice.id)}
-                                  >
-                                    Obtenir le lien
-                                  </button>
-                                  <button
-                                    className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 text-blue-700"
-                                    onClick={handleEmail}
-                                  >
-                                    Envoyer par email
-                                  </button>
-                                  <button
-                                    className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 text-blue-700"
-                                    onClick={handlePrint}
-                                  >
-                                    Imprimer
-                                  </button>
-                                  <button
-                                    className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 text-red-600 rounded-b-lg border-t border-slate-100"
-                                    onClick={() => handleDelete(invoice.id)}
-                                  >
-                                    Supprimer
-                                  </button>
-                                </div>
+              <>
+                {/* Mobile Card List */}
+                <div className="sm:hidden space-y-4">
+                  {filteredInvoices.map((invoice) => (
+                    <div key={invoice.id} className="bg-white rounded-xl shadow p-4 flex flex-col gap-2 relative">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-mono text-xs text-blue-700">N° {invoice.id}</div>
+                          <div className="font-semibold text-base text-gray-900">{invoice.clientName}</div>
+                        </div>
+                        <div className="relative">
+                          <button
+                            className="p-2 rounded-full hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                            onClick={() => setOpenMenu(openMenu === invoice.id ? null : invoice.id)}
+                            aria-label="Actions"
+                          >
+                            <svg className="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <circle cx="12" cy="6" r="1.5" />
+                              <circle cx="12" cy="12" r="1.5" />
+                              <circle cx="12" cy="18" r="1.5" />
+                            </svg>
+                          </button>
+                          {openMenu === invoice.id && (
+                            <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-100 rounded-lg shadow-lg z-50 animate-fade-in flex flex-col text-base">
+                              {invoice.status === 'paid' ? (
+                                <button
+                                  className="w-full text-left px-4 py-3 hover:bg-blue-50 text-blue-700 rounded-t-lg"
+                                  onClick={() => handleMarkUnpaid(invoice.id)}
+                                >
+                                  Marquer comme non payée
+                                </button>
+                              ) : (
+                                <button
+                                  className="w-full text-left px-4 py-3 hover:bg-blue-50 text-blue-700 rounded-t-lg"
+                                  onClick={() => handleMarkPaid(invoice.id)}
+                                  disabled={invoice.status === 'paid'}
+                                >
+                                  Marquer comme payée
+                                </button>
                               )}
+                              <button
+                                className="w-full text-left px-4 py-3 hover:bg-blue-50 text-blue-700"
+                                onClick={() => handleGetLink(invoice.id)}
+                              >
+                                Obtenir le lien
+                              </button>
+                              <button
+                                className="w-full text-left px-4 py-3 hover:bg-blue-50 text-blue-700"
+                                onClick={handleEmail}
+                              >
+                                Envoyer par email
+                              </button>
+                              <button
+                                className="w-full text-left px-4 py-3 hover:bg-blue-50 text-blue-700"
+                                onClick={handlePrint}
+                              >
+                                Imprimer
+                              </button>
+                              <button
+                                className="w-full text-left px-4 py-3 hover:bg-red-50 text-red-600 rounded-b-lg border-t border-slate-100"
+                                onClick={() => handleDelete(invoice.id)}
+                              >
+                                Supprimer
+                              </button>
                             </div>
-                          </div>
-                        </td>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-xs text-gray-500">
+                        <span>Date : <span className="text-gray-700">{new Date(invoice.date).toLocaleDateString()}</span></span>
+                        <span>Total : <span className="font-bold text-green-700">{invoice.total.toLocaleString()} DZD</span></span>
+                        {invoice.status === 'paid' && (
+                          <span className="text-green-600 font-semibold">Payée</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Desktop Table */}
+                <div className="hidden sm:block overflow-x-auto">
+                  <table className="min-w-full divide-y divide-slate-100 overflow-visible text-xs sm:text-sm">
+                    <thead>
+                      <tr className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                        <th className="px-2 sm:px-4 py-2 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider whitespace-nowrap">N° FACTURE</th>
+                        <th className="px-2 sm:px-4 py-2 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider whitespace-nowrap">CLIENT</th>
+                        <th className="px-2 sm:px-4 py-2 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider whitespace-nowrap">DATE</th>
+                        <th className="px-2 sm:px-4 py-2 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider whitespace-nowrap">TOTAL</th>
+                        <th className="px-2 sm:px-4 py-2 text-center text-xs font-semibold text-blue-700 uppercase tracking-wider whitespace-nowrap">ACTIONS</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-slate-50 overflow-visible">
+                      {filteredInvoices.map((invoice) => (
+                        <tr key={invoice.id} className="hover:bg-blue-50/50 transition-colors">
+                          <td className="px-2 sm:px-4 py-3 font-mono text-xs sm:text-sm text-blue-900 whitespace-nowrap">{invoice.id}</td>
+                          <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm font-semibold text-gray-900 whitespace-nowrap">{invoice.clientName}</td>
+                          <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-gray-700 whitespace-nowrap">{new Date(invoice.date).toLocaleDateString()}</td>
+                          <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm font-bold text-green-700 whitespace-nowrap">
+                            {invoice.total.toLocaleString()} DZD
+                            {invoice.status === 'paid' && (
+                              <div className="text-xs text-green-600 font-semibold mt-1">Payée</div>
+                            )}
+                          </td>
+                          <td className="px-2 sm:px-4 py-3 text-center relative overflow-visible whitespace-nowrap">
+                            <div className="flex justify-center gap-2">
+                              {/* Dropdown menu button */}
+                              <div ref={el => { menuRefs.current[invoice.id] = el; }} className="relative">
+                                <button
+                                  className="p-2 sm:p-2.5 rounded-full hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-150 w-10 h-10 sm:w-8 sm:h-8 flex items-center justify-center"
+                                  onClick={() => setOpenMenu(openMenu === invoice.id ? null : invoice.id)}
+                                  aria-label="Actions"
+                                >
+                                  <svg className="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="6" r="1.5" />
+                                    <circle cx="12" cy="12" r="1.5" />
+                                    <circle cx="12" cy="18" r="1.5" />
+                                  </svg>
+                                </button>
+                                {/* Dropdown menu */}
+                                {openMenu === invoice.id && (
+                                  <div className="absolute right-0 sm:right-0 left-0 sm:left-auto mt-2 w-48 sm:w-40 bg-white border border-slate-100 rounded-lg shadow-lg z-50 animate-fade-in flex flex-col text-sm sm:text-sm">
+                                    {invoice.status === 'paid' ? (
+                                      <button
+                                        className="w-full text-left px-4 py-3 sm:py-2 hover:bg-blue-50 text-blue-700 rounded-t-lg"
+                                        onClick={() => handleMarkUnpaid(invoice.id)}
+                                      >
+                                        Marquer comme non payée
+                                      </button>
+                                    ) : (
+                                      <button
+                                        className="w-full text-left px-4 py-3 sm:py-2 hover:bg-blue-50 text-blue-700 rounded-t-lg"
+                                        onClick={() => handleMarkPaid(invoice.id)}
+                                        disabled={invoice.status === 'paid'}
+                                      >
+                                        Marquer comme payée
+                                      </button>
+                                    )}
+                                    <button
+                                      className="w-full text-left px-4 py-3 sm:py-2 hover:bg-blue-50 text-blue-700"
+                                      onClick={() => handleGetLink(invoice.id)}
+                                    >
+                                      Obtenir le lien
+                                    </button>
+                                    <button
+                                      className="w-full text-left px-4 py-3 sm:py-2 hover:bg-blue-50 text-blue-700"
+                                      onClick={handleEmail}
+                                    >
+                                      Envoyer par email
+                                    </button>
+                                    <button
+                                      className="w-full text-left px-4 py-3 sm:py-2 hover:bg-blue-50 text-blue-700"
+                                      onClick={handlePrint}
+                                    >
+                                      Imprimer
+                                    </button>
+                                    <button
+                                      className="w-full text-left px-4 py-3 sm:py-2 hover:bg-red-50 text-red-600 rounded-b-lg border-t border-slate-100"
+                                      onClick={() => handleDelete(invoice.id)}
+                                    >
+                                      Supprimer
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         </div>
