@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { InvoiceData } from '@/types/invoice';
 import { generateInvoicePDF } from '@/utils/pdfGenerator';
 import PreviewPDFButton from './PreviewPDFButton';
+import { useRouter } from 'next/navigation';
 
 interface GeneratePDFButtonProps {
   invoiceData: InvoiceData;
@@ -14,6 +15,9 @@ export default function GeneratePDFButton({ invoiceData }: GeneratePDFButtonProp
   const [isSuccess, setIsSuccess] = useState(false);
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
   const [hasDownloaded, setHasDownloaded] = useState(false);
+  const router = useRouter();
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [savedInvoiceId, setSavedInvoiceId] = useState<string | null>(null);
 
   const handleGeneratePDF = async () => {
     setIsGenerating(true);
@@ -49,6 +53,11 @@ export default function GeneratePDFButton({ invoiceData }: GeneratePDFButtonProp
       }
       localStorage.setItem('invoices', JSON.stringify(invoices));
 
+      // Set highlight flag for Mes Factures
+      localStorage.setItem('highlightInvoiceId', invoiceToSave.id);
+      setSavedInvoiceId(invoiceToSave.id);
+      setShowSuccessModal(true);
+
       // Reset success state after 5 seconds
       setTimeout(() => setIsSuccess(false), 5000);
     } catch (error) {
@@ -72,11 +81,30 @@ export default function GeneratePDFButton({ invoiceData }: GeneratePDFButtonProp
       URL.revokeObjectURL(url);
       setHasDownloaded(true);
       
+      // Show success modal after download
+      setShowSuccessModal(true);
       // Reset download state after 3 seconds
       setTimeout(() => setHasDownloaded(false), 3000);
     } catch (error) {
       console.error('Error downloading PDF:', error);
       alert('Erreur lors du téléchargement du PDF');
+    }
+  };
+
+  const handlePreview = () => {
+    if (!pdfBytes || pdfBytes.length === 0) {
+      alert('Aucun PDF disponible pour la prévisualisation');
+      return;
+    }
+    try {
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank');
+      setTimeout(() => {
+        URL.revokeObjectURL(blobUrl);
+      }, 1000);
+    } catch (error) {
+      alert('Erreur lors de la prévisualisation du PDF');
     }
   };
 
@@ -226,6 +254,53 @@ export default function GeneratePDFButton({ invoiceData }: GeneratePDFButtonProp
           </div>
         </div>
       </div>
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-xs flex flex-col items-center">
+            <div className="mb-4">
+              <svg className="w-12 h-12 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div className="text-lg font-bold text-green-700 mb-2 text-center">Facture créée avec succès !</div>
+            <div className="text-sm text-gray-600 mb-6 text-center">Vous pouvez consulter votre facture, la télécharger ou en créer une nouvelle.</div>
+            <div className="flex flex-col gap-2 w-full">
+              <button
+                className="w-full px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-semibold shadow hover:from-green-600 hover:to-emerald-700 transition-colors"
+                onClick={handleDownload}
+              >
+                Télécharger le PDF
+              </button>
+              <button
+                className="w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg font-semibold shadow hover:from-blue-600 hover:to-indigo-700 transition-colors"
+                onClick={handlePreview}
+              >
+                Prévisualiser le PDF
+              </button>
+              <button
+                className="w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg font-semibold shadow hover:from-blue-600 hover:to-indigo-700 transition-colors"
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  router.push('/');
+                }}
+              >
+                Retour à Mes Factures
+              </button>
+              <button
+                className="w-full px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-semibold shadow hover:from-green-600 hover:to-emerald-700 transition-colors"
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  window.location.reload();
+                }}
+              >
+                Créer une autre facture
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
