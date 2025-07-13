@@ -4,10 +4,10 @@ import React, { useState } from "react";
 import Link from "next/link";
 
 const NAV_LINKS = [
-  { name: "Home", href: "/" },
-  { name: "Create Invoice", href: "/" }, // Only home route exists, so both point to root
-  { name: "My Invoices", href: "/" },    // Update hrefs if/when routes are added
-  { name: "Privacy Policy", href: "/" },
+  { name: "Mes Factures", href: "/" },
+  { name: "Créer une facture", href: "/create-invoice" },
+  { name: "Accueil", href: "/home" },
+  { name: "Politique de confidentialité", href: "/privacy-policy" },
 ];
 
 export default function Navbar() {

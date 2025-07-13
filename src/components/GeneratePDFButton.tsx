@@ -25,7 +25,30 @@ export default function GeneratePDFButton({ invoiceData }: GeneratePDFButtonProp
       const bytes = await generateInvoicePDF(invoiceData);
       setPdfBytes(bytes);
       setIsSuccess(true);
-      
+
+      // Save invoice to localStorage
+      const invoiceToSave = {
+        id: invoiceData.meta.invoiceNumber || Date.now().toString(),
+        clientName: invoiceData.client.clientName,
+        date: invoiceData.meta.date,
+        total: invoiceData.totals.montantTTC,
+        items: invoiceData.items.map(item => ({
+          description: item.designation,
+          quantity: item.quantity,
+          price: item.unitPrice,
+        })),
+      };
+      const stored = localStorage.getItem('invoices');
+      let invoices = stored ? JSON.parse(stored) : [];
+      // Update if exists, else add
+      const idx = invoices.findIndex((inv: any) => inv.id === invoiceToSave.id);
+      if (idx !== -1) {
+        invoices[idx] = invoiceToSave;
+      } else {
+        invoices.push(invoiceToSave);
+      }
+      localStorage.setItem('invoices', JSON.stringify(invoices));
+
       // Reset success state after 5 seconds
       setTimeout(() => setIsSuccess(false), 5000);
     } catch (error) {
