@@ -101,7 +101,7 @@ export default function GeneratePDFButton({ invoiceData }: GeneratePDFButtonProp
       setTimeout(() => {
         URL.revokeObjectURL(blobUrl);
       }, 1000);
-    } catch (error) {
+    } catch {
       alert('Erreur lors de la prévisualisation du PDF');
     }
   };
