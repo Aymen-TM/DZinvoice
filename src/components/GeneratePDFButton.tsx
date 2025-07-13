@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { InvoiceData } from '@/types/invoice';
 import { generateInvoicePDF } from '@/utils/pdfGenerator';
+import PreviewPDFButton from './PreviewPDFButton';
 
 interface GeneratePDFButtonProps {
   invoiceData: InvoiceData;
@@ -11,14 +12,17 @@ interface GeneratePDFButtonProps {
 export default function GeneratePDFButton({ invoiceData }: GeneratePDFButtonProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
 
   const handleGeneratePDF = async () => {
     setIsGenerating(true);
     setIsSuccess(false);
+    setPdfBytes(null);
     
-          try {
-        await generateInvoicePDF(invoiceData);
-        setIsSuccess(true);
+    try {
+      const bytes = await generateInvoicePDF(invoiceData);
+      setPdfBytes(bytes);
+      setIsSuccess(true);
       
       // Reset success state after 3 seconds
       setTimeout(() => setIsSuccess(false), 3000);
@@ -108,6 +112,16 @@ export default function GeneratePDFButton({ invoiceData }: GeneratePDFButtonProp
               </div>
             </button>
           </div>
+
+          {/* Preview Button - Only show when PDF is generated */}
+          {pdfBytes && (
+            <div className="flex justify-center">
+              <PreviewPDFButton 
+                pdfBytes={pdfBytes} 
+                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+              />
+            </div>
+          )}
 
           {/* Additional info */}
           <div className="text-center space-y-2 sm:space-y-3">

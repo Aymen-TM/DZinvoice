@@ -218,4 +218,7 @@ export const generateInvoicePDF = async (invoiceData: InvoiceData) => {
   link.href = URL.createObjectURL(blob);
   link.download = `facture_${meta.invoiceNumber}.pdf`;
   link.click();
+  
+  // Return the PDF bytes for preview functionality
+  return pdfBytes;
 }; 
