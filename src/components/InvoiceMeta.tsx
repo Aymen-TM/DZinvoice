@@ -49,7 +49,6 @@ export default function InvoiceMeta({ meta, onMetaChange }: InvoiceMetaProps) {
               value={meta.invoiceNumber}
               onChange={(e) => handleChange('invoiceNumber', e.target.value)}
               className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm hover:bg-white/70 focus:bg-white/90 group-hover/item:border-purple-300 text-sm sm:text-base"
-              placeholder="Numéro de facture"
             />
             <button
               type="button"
@@ -102,7 +101,6 @@ export default function InvoiceMeta({ meta, onMetaChange }: InvoiceMetaProps) {
             onChange={(e) => handleChange('notes', e.target.value)}
             rows={3}
             className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm hover:bg-white/70 focus:bg-white/90 group-hover/item:border-purple-300 text-sm sm:text-base resize-none"
-            placeholder="Notes additionnelles..."
           />
         </div>
       </div>

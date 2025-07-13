@@ -158,7 +158,7 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
                         type="text"
                         value={item.reference}
                         onChange={(e) => updateItem(item.id, 'reference', e.target.value)}
-                        className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white"
+                        className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white placeholder-gray-400 placeholder-opacity-100"
                         placeholder="Référence"
                       />
                     </div>
@@ -192,7 +192,7 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
                       type="text"
                       value={item.designation}
                       onChange={(e) => updateItem(item.id, 'designation', e.target.value)}
-                      className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white"
+                      className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white placeholder-gray-400 placeholder-opacity-100"
                       placeholder="Désignation"
                     />
                   </div>
@@ -263,7 +263,7 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
                       type="text"
                       value={item.reference}
                       onChange={(e) => updateItem(item.id, 'reference', e.target.value)}
-                      className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white group-hover/item:border-orange-300"
+                      className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white group-hover/item:border-orange-300 placeholder-gray-400 placeholder-opacity-100"
                       placeholder="Référence"
                     />
                   </div>
@@ -273,7 +273,7 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
                       type="text"
                       value={item.designation}
                       onChange={(e) => updateItem(item.id, 'designation', e.target.value)}
-                      className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white group-hover/item:border-orange-300"
+                      className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white group-hover/item:border-orange-300 placeholder-gray-400 placeholder-opacity-100"
                       placeholder="Désignation"
                     />
                   </div>
