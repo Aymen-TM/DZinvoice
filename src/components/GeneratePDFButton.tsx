@@ -13,24 +13,47 @@ export default function GeneratePDFButton({ invoiceData }: GeneratePDFButtonProp
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
+  const [hasDownloaded, setHasDownloaded] = useState(false);
 
   const handleGeneratePDF = async () => {
     setIsGenerating(true);
     setIsSuccess(false);
     setPdfBytes(null);
+    setHasDownloaded(false);
     
     try {
       const bytes = await generateInvoicePDF(invoiceData);
       setPdfBytes(bytes);
       setIsSuccess(true);
       
-      // Reset success state after 3 seconds
-      setTimeout(() => setIsSuccess(false), 3000);
+      // Reset success state after 5 seconds
+      setTimeout(() => setIsSuccess(false), 5000);
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Erreur lors de la génération du PDF. Veuillez réessayer.');
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleDownload = () => {
+    if (!pdfBytes) return;
+    
+    try {
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `facture_${invoiceData.meta.invoiceNumber}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+      setHasDownloaded(true);
+      
+      // Reset download state after 3 seconds
+      setTimeout(() => setHasDownloaded(false), 3000);
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      alert('Erreur lors du téléchargement du PDF');
     }
   };
 
@@ -62,7 +85,7 @@ export default function GeneratePDFButton({ invoiceData }: GeneratePDFButtonProp
             </div>
             <div className="flex items-center space-x-2 text-sm text-gray-500 bg-white/50 backdrop-blur-sm px-3 sm:px-4 py-2 rounded-full">
               <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse delay-600"></div>
-              <span>Téléchargement instantané</span>
+              <span>Prévisualisation disponible</span>
             </div>
           </div>
 
@@ -113,20 +136,49 @@ export default function GeneratePDFButton({ invoiceData }: GeneratePDFButtonProp
             </button>
           </div>
 
-          {/* Preview Button - Only show when PDF is generated */}
+          {/* Action Buttons - Only show when PDF is generated */}
           {pdfBytes && (
-            <div className="flex justify-center">
+            <div className="flex flex-col sm:flex-row justify-center items-center space-y-3 sm:space-y-0 sm:space-x-4">
+              {/* Preview Button */}
               <PreviewPDFButton 
                 pdfBytes={pdfBytes} 
                 className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
               />
+              
+              {/* Download Button */}
+              <button
+                onClick={handleDownload}
+                className={`
+                  bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 
+                  text-white px-6 py-3 rounded-xl transition-all duration-300 font-semibold 
+                  flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl 
+                  transform hover:scale-105 active:scale-95 min-h-[48px]
+                  ${hasDownloaded ? 'bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700' : ''}
+                `}
+              >
+                {hasDownloaded ? (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Téléchargé!</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Télécharger le PDF</span>
+                  </>
+                )}
+              </button>
             </div>
           )}
 
           {/* Additional info */}
           <div className="text-center space-y-2 sm:space-y-3">
             <p className="text-xs sm:text-sm text-gray-500 max-w-md mx-auto">
-              Le PDF sera automatiquement téléchargé une fois la génération terminée
+              {pdfBytes ? 'Prévisualisez d\'abord, puis téléchargez si vous êtes satisfait' : 'Le PDF sera généré et vous pourrez le prévisualiser avant de le télécharger'}
             </p>
             <div className="flex flex-col sm:flex-row justify-center items-center space-y-1 sm:space-y-0 sm:space-x-4 text-xs text-gray-400">
               <span className="flex items-center space-x-1">

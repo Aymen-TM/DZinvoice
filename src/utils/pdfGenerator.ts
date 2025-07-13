@@ -213,12 +213,7 @@ export const generateInvoicePDF = async (invoiceData: InvoiceData) => {
 
   // === Save + Download ===
   const pdfBytes = await pdfDoc.save();
-  const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `facture_${meta.invoiceNumber}.pdf`;
-  link.click();
   
-  // Return the PDF bytes for preview functionality
+  // Return the PDF bytes for preview and download functionality
   return pdfBytes;
 }; 
