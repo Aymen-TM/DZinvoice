@@ -10,135 +10,133 @@ interface GeneratePDFButtonProps {
 
 export default function GeneratePDFButton({ invoiceData }: GeneratePDFButtonProps) {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const handleGeneratePDF = async () => {
     setIsGenerating(true);
-    try {
-      await generateInvoicePDF(invoiceData);
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
+    setIsSuccess(false);
+    
+          try {
+        await generateInvoicePDF(invoiceData);
+        setIsSuccess(true);
+      
+      // Reset success state after 3 seconds
+      setTimeout(() => setIsSuccess(false), 3000);
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert('Erreur lors de la génération du PDF');
+      alert('Erreur lors de la génération du PDF. Veuillez réessayer.');
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const isFormValid = () => {
-    const { company, client, meta, items } = invoiceData;
-    return (
-      company.companyName.trim() !== '' &&
-      client.clientName.trim() !== '' &&
-      meta.invoiceNumber.trim() !== '' &&
-      items.length > 0
-    );
-  };
-
   return (
-    <div className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-2xl shadow-xl p-8 hover:shadow-2xl transition-all duration-500 group relative overflow-hidden">
-      {/* Animated background particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-4 right-4 w-2 h-2 bg-emerald-400 rounded-full animate-ping"></div>
-        <div className="absolute bottom-8 left-8 w-1 h-1 bg-teal-400 rounded-full animate-ping delay-1000"></div>
-        <div className="absolute top-1/2 left-1/4 w-1.5 h-1.5 bg-blue-400 rounded-full animate-ping delay-500"></div>
-      </div>
-
-      <div className="text-center relative z-10">
-        <div className="flex items-center justify-center space-x-4 mb-8">
-          <div className="w-14 h-14 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8 hover:shadow-2xl transition-all duration-500 group">
+      <div className="text-center">
+        <div className="flex items-center justify-center space-x-3 sm:space-x-4 mb-6 sm:mb-8">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
           <div>
-            <h2 className="text-3xl font-bold text-gray-900 group-hover:text-emerald-600 transition-colors duration-300">Générer la facture</h2>
-            <p className="text-gray-600 group-hover:text-gray-700 transition-colors duration-300">Créez votre facture au format PDF</p>
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 group-hover:text-indigo-600 transition-colors duration-300">Générer le PDF</h2>
+            <p className="text-sm sm:text-base text-gray-600 group-hover:text-gray-700 transition-colors duration-300">Créez votre facture au format PDF</p>
           </div>
         </div>
 
-        <div className="space-y-6">
-          <button
-            onClick={handleGeneratePDF}
-            disabled={!isFormValid() || isGenerating}
-            className={`
-              w-full max-w-lg px-10 py-5 rounded-2xl font-semibold text-xl transition-all duration-500 transform hover:scale-105 active:scale-95 relative overflow-hidden
-              ${isFormValid() && !isGenerating
-                ? 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-2xl hover:shadow-emerald-500/25'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }
-            `}
-          >
-            {/* Success animation overlay */}
-            {showSuccess && (
-              <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 flex items-center justify-center animate-pulse">
-                <div className="flex items-center space-x-3">
-                  <svg className="w-6 h-6 text-white animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-white font-semibold">PDF généré avec succès!</span>
-                </div>
-              </div>
-            )}
+        <div className="space-y-4 sm:space-y-6">
+          {/* Status indicators */}
+          <div className="flex flex-col sm:flex-row justify-center items-center space-y-2 sm:space-y-0 sm:space-x-4 px-4">
+            <div className="flex items-center space-x-2 text-sm text-gray-500 bg-white/50 backdrop-blur-sm px-3 sm:px-4 py-2 rounded-full">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+              <span>Prêt à générer</span>
+            </div>
+            <div className="flex items-center space-x-2 text-sm text-gray-500 bg-white/50 backdrop-blur-sm px-3 sm:px-4 py-2 rounded-full">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse delay-300"></div>
+              <span>Format professionnel</span>
+            </div>
+            <div className="flex items-center space-x-2 text-sm text-gray-500 bg-white/50 backdrop-blur-sm px-3 sm:px-4 py-2 rounded-full">
+              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse delay-600"></div>
+              <span>Téléchargement instantané</span>
+            </div>
+          </div>
 
-            {isGenerating ? (
-              <div className="flex items-center justify-center space-x-4">
-                <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Génération en cours...</span>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center space-x-4">
-                <svg className="w-7 h-7 transition-transform duration-300 group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          {/* Generate Button */}
+          <div className="flex justify-center">
+            <button
+              onClick={handleGeneratePDF}
+              disabled={isGenerating}
+              className={`
+                relative overflow-hidden bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-8 sm:px-12 py-4 sm:py-5 rounded-2xl transition-all duration-500 font-bold text-lg sm:text-xl shadow-2xl hover:shadow-3xl transform hover:scale-105 active:scale-95 w-full sm:w-auto max-w-md
+                ${isGenerating ? 'opacity-75 cursor-not-allowed' : ''}
+                ${isSuccess ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700' : ''}
+              `}
+            >
+              {/* Loading overlay */}
+              {isGenerating && (
+                <div className="absolute inset-0 bg-black/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                  <div className="flex items-center space-x-3">
+                    <svg className="w-6 h-6 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span className="text-sm sm:text-base">Génération en cours...</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Success overlay */}
+              {isSuccess && (
+                <div className="absolute inset-0 bg-green-500/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                  <div className="flex items-center space-x-3">
+                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-sm sm:text-base text-green-700 font-semibold">PDF généré avec succès!</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Button content */}
+              <div className="flex items-center justify-center space-x-3">
+                <svg className={`w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-300 ${isGenerating ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <span>Générer le PDF</span>
+                <span className="text-sm sm:text-base">
+                  {isGenerating ? 'Génération...' : isSuccess ? 'PDF créé!' : 'Générer le PDF'}
+                </span>
               </div>
-            )}
-          </button>
+            </button>
+          </div>
 
-          {!isFormValid() && (
-            <div className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-xl p-6 max-w-lg mx-auto animate-fade-in">
-              <div className="flex items-center space-x-3">
-                <svg className="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+          {/* Additional info */}
+          <div className="text-center space-y-2 sm:space-y-3">
+            <p className="text-xs sm:text-sm text-gray-500 max-w-md mx-auto">
+              Le PDF sera automatiquement téléchargé une fois la génération terminée
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center items-center space-y-1 sm:space-y-0 sm:space-x-4 text-xs text-gray-400">
+              <span className="flex items-center space-x-1">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <div>
-                  <p className="font-semibold mb-1">Champs obligatoires manquants</p>
-                  <p className="text-amber-700">Veuillez remplir tous les champs obligatoires pour générer le PDF</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="text-xs text-gray-500 max-w-lg mx-auto">
-            <div className="flex items-center justify-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                <span>PDF professionnel</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse delay-300"></div>
-                <span>Téléchargement automatique</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse delay-600"></div>
-                <span>Calculs automatiques</span>
-              </div>
+                <span>Format A4</span>
+              </span>
+              <span className="flex items-center space-x-1">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Haute qualité</span>
+              </span>
+              <span className="flex items-center space-x-1">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <span>Sécurisé</span>
+              </span>
             </div>
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes fade-in {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.5s ease-out;
-        }
-      `}</style>
     </div>
   );
 } 
