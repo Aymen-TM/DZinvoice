@@ -39,9 +39,9 @@ export default function GeneratePDFButton({ invoiceData }: GeneratePDFButtonProp
         })),
       };
       const stored = localStorage.getItem('invoices');
-      let invoices = stored ? JSON.parse(stored) : [];
+      const invoices: Record<string, unknown>[] = stored ? JSON.parse(stored) : [];
       // Update if exists, else add
-      const idx = invoices.findIndex((inv: any) => inv.id === invoiceToSave.id);
+      const idx = invoices.findIndex((inv) => (inv as { id?: string }).id === invoiceToSave.id);
       if (idx !== -1) {
         invoices[idx] = invoiceToSave;
       } else {

@@ -149,7 +149,7 @@ export default function MyInvoicesPage() {
                   <path d="M16 24h16M16 30h10" strokeWidth="2" strokeLinecap="round" />
                 </svg>
                 <div className="font-semibold text-lg text-blue-700 mb-1">Aucune facture trouvée</div>
-                <div className="text-sm text-gray-500 mb-4">Créez votre première facture pour l'afficher ici.</div>
+                <div className="text-sm text-gray-500 mb-4">Créez votre première facture pour l&apos;afficher ici.</div>
                 <Link
                   href="/"
                   className="inline-block px-5 py-2 bg-gradient-to-r from-indigo-500 to-blue-600 text-white rounded-lg font-semibold shadow hover:from-indigo-600 hover:to-blue-700 transition-colors text-sm"
