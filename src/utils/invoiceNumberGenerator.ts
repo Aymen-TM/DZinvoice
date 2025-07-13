@@ -1,7 +1,20 @@
+interface StoredInvoice {
+  id: string;
+  clientName: string;
+  date: string;
+  total: number;
+  items: Array<{
+    description: string;
+    quantity: number;
+    price: number;
+  }>;
+  status?: string;
+}
+
 export function generateNextInvoiceNumber(): string {
   // Get existing invoices from localStorage
   const stored = localStorage.getItem('invoices');
-  const invoices = stored ? JSON.parse(stored) : [];
+  const invoices: StoredInvoice[] = stored ? JSON.parse(stored) : [];
   
   if (invoices.length === 0) {
     // If no invoices exist, start with 1
@@ -10,7 +23,7 @@ export function generateNextInvoiceNumber(): string {
   
   // Extract invoice numbers and find the highest one
   const invoiceNumbers = invoices
-    .map((invoice: any) => invoice.id)
+    .map((invoice: StoredInvoice) => invoice.id)
     .filter((id: string) => {
       // Only consider numeric invoice numbers
       const num = parseInt(id, 10);
