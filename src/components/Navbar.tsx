@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 const NAV_LINKS = [
   { name: "Mes Factures", href: "/" },
@@ -20,7 +21,7 @@ export default function Navbar() {
           {/* Brand */}
           <div className="flex-shrink-0 flex items-center">
             <Link href="/" className="flex items-center space-x-2">
-              <img src="/globe.svg" alt="DZ Invoice Logo" className="h-8 w-8" />
+              <Image src="/globe.svg" alt="DZ Invoice Logo" className="h-8 w-8" width={32} height={32} />
               <span className="font-bold text-lg tracking-tight text-gray-900">DZ Invoice</span>
             </Link>
           </div>

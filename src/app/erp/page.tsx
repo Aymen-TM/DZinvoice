@@ -314,7 +314,7 @@ export default function AccueilERPTest() {
   };
 
   const handleEditAchat = (idx: number) => {
-    const { id: _id, ...rest } = achats[idx];
+    const { id, ...rest } = achats[idx];
     setAchatForm(rest);
     setEditAchatIdx(idx);
     setShowAchatForm(true);
