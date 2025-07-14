@@ -266,6 +266,11 @@ export default function AccueilERPTest() {
   const handleDeleteVente = (idx: number) => {
     setShowDeleteVenteIdx(idx);
   };
+
+  const handleEditVente = (id: string) => {
+    // Navigate to invoice creation page with the invoice ID for editing
+    router.push(`/create-invoice?edit=${id}`);
+  };
   const confirmDeleteVente = async () => {
     if (showDeleteVenteIdx !== null) {
       const venteToDelete = ventes[showDeleteVenteIdx];
@@ -357,12 +362,12 @@ export default function AccueilERPTest() {
   return (
     <div className="min-h-screen bg-[var(--background)] flex flex-col pt-16 font-sans">
       {/* Top Menu Bar */}
-      <nav className="w-full bg-[var(--card)] shadow z-30 flex flex-col sm:flex-row items-center h-auto sm:h-16 px-2 sm:px-8 border-b border-[var(--border)] sticky top-0">
-        <div className="flex flex-wrap gap-2 sm:gap-6 w-full justify-center sm:justify-start py-2 sm:py-0">
+      <nav className="w-full bg-[var(--card)] shadow z-30 flex flex-col sm:flex-row items-center h-auto sm:h-16 px-3 sm:px-8 border-b border-[var(--border)] sticky top-0">
+        <div className="flex flex-wrap gap-1 sm:gap-6 w-full justify-center sm:justify-start py-3 sm:py-0">
           {ERP_MENU_ITEMS.map((item) => (
             <button
               key={item.key}
-              className={`px-4 py-2 font-semibold text-sm rounded-xl transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 ${activeMenu === item.key ? "bg-[var(--primary)] text-white shadow" : "text-[var(--primary-dark)] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)]"}`}
+              className={`px-3 sm:px-4 py-2.5 sm:py-2 font-semibold text-xs sm:text-sm rounded-xl transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 ${activeMenu === item.key ? "bg-[var(--primary)] text-white shadow" : "text-[var(--primary-dark)] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)]"}`}
               onClick={() => setActiveMenu(item.key)}
             >
               {item.label}
@@ -372,12 +377,12 @@ export default function AccueilERPTest() {
       </nav>
 
       {/* Toolbar */}
-      <div className="bg-[var(--card)] border-b border-[var(--border)] shadow-sm flex flex-col sm:flex-row items-center px-2 sm:px-8 h-auto sm:h-14 z-30 sticky top-16">
-        <div className="flex flex-wrap gap-2 w-full justify-center sm:justify-start py-2 sm:py-0">
+      <div className="bg-[var(--card)] border-b border-[var(--border)] shadow-sm flex flex-col sm:flex-row items-center px-3 sm:px-8 h-auto sm:h-14 z-30 sticky top-16">
+        <div className="flex flex-wrap gap-2 w-full justify-center sm:justify-start py-3 sm:py-0">
           {toolbarButtons.map((btn) => (
             <button
               key={btn.key}
-              className="px-4 py-2 bg-[var(--primary)]/5 border border-[var(--border)] rounded-xl text-[var(--primary-dark)] font-medium text-sm hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 transition-colors"
+              className="px-3 sm:px-4 py-2.5 sm:py-2 bg-[var(--primary)]/5 border border-[var(--border)] rounded-xl text-[var(--primary-dark)] font-medium text-xs sm:text-sm hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 transition-colors"
               {...(typeof btn.onClick === 'function' ? { onClick: btn.onClick } : {})}
             >
               {btn.label}
@@ -387,108 +392,108 @@ export default function AccueilERPTest() {
       </div>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-2 sm:p-8 pt-4 sm:pt-10 overflow-x-auto">
-        <div className="bg-[var(--card)] rounded-2xl shadow-lg border border-[var(--border)] p-2 sm:p-8">
+      <main className="flex-1 p-3 sm:p-8 pt-4 sm:pt-10 overflow-x-auto">
+        <div className="bg-[var(--card)] rounded-2xl shadow-lg border border-[var(--border)] p-3 sm:p-8">
           <h2 className="text-lg sm:text-2xl font-bold mb-6 text-[var(--primary-dark)] tracking-tight">{ERP_MENU_ITEMS.find((m) => m.key === activeMenu)?.label}</h2>
           {/* --- FORMS --- */}
           {activeMenu === "tiers" && showClientForm && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 sm:p-4">
               <form
                 onSubmit={handleClientSubmit}
-                className="relative bg-[var(--card)] rounded-2xl shadow-2xl border border-[var(--primary)]/20 w-full max-w-lg sm:max-w-2xl p-0 overflow-hidden animate-fade-in mx-2"
+                className="relative bg-[var(--card)] rounded-2xl shadow-2xl border border-[var(--primary)]/20 w-full max-w-lg sm:max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in"
               >
-                <div className="flex items-center gap-3 px-6 pt-6 pb-2 border-b border-[var(--primary)]/20 bg-gradient-to-r from-[var(--primary)]/5 to-[var(--primary)]/10">
-                  <div className="w-10 h-10 bg-[var(--primary)] rounded-full flex items-center justify-center shadow">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                <div className="flex items-center gap-3 px-4 sm:px-6 pt-4 sm:pt-6 pb-2 border-b border-[var(--primary)]/20 bg-gradient-to-r from-[var(--primary)]/5 to-[var(--primary)]/10 sticky top-0 bg-[var(--card)] z-10">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[var(--primary)] rounded-full flex items-center justify-center shadow flex-shrink-0">
+                    <svg className="w-4 h-4 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                   </div>
-                  <h3 className="text-xl font-bold text-[var(--primary-dark)]">Ajouter / Modifier un client</h3>
+                  <h3 className="text-lg sm:text-xl font-bold text-[var(--primary-dark)]">Ajouter / Modifier un client</h3>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 px-6 py-6 bg-gradient-to-br from-[var(--card)] via-[var(--primary)]/5 to-[var(--primary)]/10">
-                  <div>
-                    <label className="block font-semibold mb-1 text-[var(--primary-dark)]">Code Tiers</label>
-                    <input name="codeTiers" value={clientForm.codeTiers} onChange={handleClientChange} className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition" placeholder="Code Tiers" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 px-4 sm:px-6 py-4 sm:py-6 bg-gradient-to-br from-[var(--card)] via-[var(--primary)]/5 to-[var(--primary)]/10">
+                  <div className="sm:col-span-2">
+                    <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">Code Tiers</label>
+                    <input name="codeTiers" value={clientForm.codeTiers} onChange={handleClientChange} className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm" placeholder="Code Tiers" />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">Raison Sociale *</label>
+                    <input name="raisonSocial" value={clientForm.raisonSocial} onChange={handleClientChange} required className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm" placeholder="Raison Sociale" />
                   </div>
                   <div>
-                    <label className="block font-semibold mb-1 text-[var(--primary-dark)]">Raison Sociale *</label>
-                    <input name="raisonSocial" value={clientForm.raisonSocial} onChange={handleClientChange} required className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition" placeholder="Raison Sociale" />
+                    <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">Famille</label>
+                    <input name="famille" value={clientForm.famille} onChange={handleClientChange} className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm" placeholder="Famille" />
                   </div>
                   <div>
-                    <label className="block font-semibold mb-1 text-[var(--primary-dark)]">Famille</label>
-                    <input name="famille" value={clientForm.famille} onChange={handleClientChange} className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition" placeholder="Famille" />
+                    <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">Activité</label>
+                    <input name="activite" value={clientForm.activite} onChange={handleClientChange} className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm" placeholder="Activité" />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">Adresse</label>
+                    <input name="adresse" value={clientForm.adresse} onChange={handleClientChange} className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm" placeholder="Adresse" />
                   </div>
                   <div>
-                    <label className="block font-semibold mb-1 text-[var(--primary-dark)]">Activité</label>
-                    <input name="activite" value={clientForm.activite} onChange={handleClientChange} className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition" placeholder="Activité" />
+                    <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">Ville</label>
+                    <input name="ville" value={clientForm.ville} onChange={handleClientChange} className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm" placeholder="Ville" />
                   </div>
                   <div>
-                    <label className="block font-semibold mb-1 text-[var(--primary-dark)]">Adresse</label>
-                    <input name="adresse" value={clientForm.adresse} onChange={handleClientChange} className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition" placeholder="Adresse" />
+                    <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">RC</label>
+                    <input name="rc" value={clientForm.rc} onChange={handleClientChange} className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm" placeholder="RC" />
                   </div>
                   <div>
-                    <label className="block font-semibold mb-1 text-[var(--primary-dark)]">Ville</label>
-                    <input name="ville" value={clientForm.ville} onChange={handleClientChange} className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition" placeholder="Ville" />
+                    <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">NIF</label>
+                    <input name="nif" value={clientForm.nif} onChange={handleClientChange} className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm" placeholder="NIF" />
                   </div>
                   <div>
-                    <label className="block font-semibold mb-1 text-[var(--primary-dark)]">RC</label>
-                    <input name="rc" value={clientForm.rc} onChange={handleClientChange} className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition" placeholder="RC" />
+                    <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">NIS</label>
+                    <input name="nis" value={clientForm.nis} onChange={handleClientChange} className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm" placeholder="NIS" />
                   </div>
                   <div>
-                    <label className="block font-semibold mb-1 text-[var(--primary-dark)]">NIF</label>
-                    <input name="nif" value={clientForm.nif} onChange={handleClientChange} className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition" placeholder="NIF" />
-                  </div>
-                  <div>
-                    <label className="block font-semibold mb-1 text-[var(--primary-dark)]">NIS</label>
-                    <input name="nis" value={clientForm.nis} onChange={handleClientChange} className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition" placeholder="NIS" />
-                  </div>
-                  <div>
-                    <label className="block font-semibold mb-1 text-[var(--primary-dark)]">AI</label>
-                    <input name="ai" value={clientForm.ai} onChange={handleClientChange} className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition" placeholder="AI" />
+                    <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">AI</label>
+                    <input name="ai" value={clientForm.ai} onChange={handleClientChange} className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm" placeholder="AI" />
                   </div>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-3 px-6 pb-6 pt-2 border-t border-[var(--primary)]/20 bg-gradient-to-r from-[var(--primary)]/5 to-[var(--primary)]/10 justify-end">
-                  <button type="button" onClick={handleClientCancel} className="px-5 py-2 rounded-lg font-semibold bg-[var(--border)] text-[var(--muted)] hover:bg-[var(--border)]/80 transition">Annuler</button>
-                  <button type="submit" className="px-5 py-2 rounded-lg font-semibold bg-[var(--primary)] text-white hover:bg-[var(--primary-dark)] shadow transition">Enregistrer</button>
-                  {clientError && <span className="text-[var(--danger)] ml-4 self-center text-xs sm:text-sm">{clientError}</span>}
+                <div className="flex flex-col sm:flex-row gap-3 px-4 sm:px-6 pb-4 sm:pb-6 pt-2 border-t border-[var(--primary)]/20 bg-gradient-to-r from-[var(--primary)]/5 to-[var(--primary)]/10 justify-end sticky bottom-0 bg-[var(--card)] z-10">
+                  <button type="button" onClick={handleClientCancel} className="px-4 sm:px-5 py-3 sm:py-2 rounded-lg font-semibold bg-[var(--border)] text-[var(--muted)] hover:bg-[var(--border)]/80 transition text-sm">Annuler</button>
+                  <button type="submit" className="px-4 sm:px-5 py-3 sm:py-2 rounded-lg font-semibold bg-[var(--primary)] text-white hover:bg-[var(--primary-dark)] shadow transition text-sm">Enregistrer</button>
+                  {clientError && <span className="text-[var(--danger)] text-xs sm:text-sm text-center sm:text-left">{clientError}</span>}
                 </div>
-                <button type="button" onClick={handleClientCancel} className="absolute top-3 right-3 text-[var(--muted)] hover:text-[var(--danger)] text-2xl font-bold focus:outline-none">&times;</button>
+                <button type="button" onClick={handleClientCancel} className="absolute top-3 right-3 text-[var(--muted)] hover:text-[var(--danger)] text-xl sm:text-2xl font-bold focus:outline-none w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--border)] transition">&times;</button>
               </form>
             </div>
           )}
           {activeMenu === "articles" && showArticleForm && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 sm:p-4">
               <form
                 onSubmit={handleArticleSubmit}
-                className="relative bg-[var(--card)] rounded-2xl shadow-2xl border border-[var(--primary)]/20 w-full max-w-lg sm:max-w-2xl p-0 overflow-hidden animate-fade-in mx-2"
+                className="relative bg-[var(--card)] rounded-2xl shadow-2xl border border-[var(--primary)]/20 w-full max-w-lg sm:max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in"
               >
-                <div className="flex items-center gap-3 px-6 pt-6 pb-2 border-b border-[var(--primary)]/20 bg-gradient-to-r from-[var(--primary)]/5 to-[var(--primary)]/10">
-                  <div className="w-10 h-10 bg-[var(--primary)] rounded-full flex items-center justify-center shadow">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                <div className="flex items-center gap-3 px-4 sm:px-6 pt-4 sm:pt-6 pb-2 border-b border-[var(--primary)]/20 bg-gradient-to-r from-[var(--primary)]/5 to-[var(--primary)]/10 sticky top-0 bg-[var(--card)] z-10">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[var(--primary)] rounded-full flex items-center justify-center shadow flex-shrink-0">
+                    <svg className="w-4 h-4 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
                   </div>
-                  <h3 className="text-xl font-bold text-[var(--primary-dark)]">Ajouter / Modifier un article</h3>
+                  <h3 className="text-lg sm:text-xl font-bold text-[var(--primary-dark)]">Ajouter / Modifier un article</h3>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 px-6 py-6 bg-gradient-to-br from-[var(--card)] via-[var(--primary)]/5 to-[var(--primary)]/10">
-                  <div>
-                    <label className="block font-semibold mb-1 text-[var(--primary-dark)]">Référence *</label>
-                    <input name="ref" value={articleForm.ref} onChange={handleArticleChange} required className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition" placeholder="Référence" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 px-4 sm:px-6 py-4 sm:py-6 bg-gradient-to-br from-[var(--card)] via-[var(--primary)]/5 to-[var(--primary)]/10">
+                  <div className="sm:col-span-2">
+                    <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">Référence *</label>
+                    <input name="ref" value={articleForm.ref} onChange={handleArticleChange} required className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm" placeholder="Référence" />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">Désignation *</label>
+                    <input name="designation" value={articleForm.designation} onChange={handleArticleChange} required className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm" placeholder="Désignation" />
                   </div>
                   <div>
-                    <label className="block font-semibold mb-1 text-[var(--primary-dark)]">Désignation *</label>
-                    <input name="designation" value={articleForm.designation} onChange={handleArticleChange} required className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition" placeholder="Désignation" />
+                    <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">Prix Achat HT</label>
+                    <input name="prixAchat" type="number" value={articleForm.prixAchat} onChange={handleArticleChange} className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm" placeholder="Prix Achat HT" />
                   </div>
                   <div>
-                    <label className="block font-semibold mb-1 text-[var(--primary-dark)]">Prix Achat HT</label>
-                    <input name="prixAchat" type="number" value={articleForm.prixAchat} onChange={handleArticleChange} className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition" placeholder="Prix Achat HT" />
-                  </div>
-                  <div>
-                    <label className="block font-semibold mb-1 text-[var(--primary-dark)]">Prix Vente HT</label>
-                    <input name="prixVente" type="number" value={articleForm.prixVente} onChange={handleArticleChange} className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition" placeholder="Prix Vente HT" />
+                    <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">Prix Vente HT</label>
+                    <input name="prixVente" type="number" value={articleForm.prixVente} onChange={handleArticleChange} className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm" placeholder="Prix Vente HT" />
                   </div>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-3 px-6 pb-6 pt-2 border-t border-[var(--primary)]/20 bg-gradient-to-r from-[var(--primary)]/5 to-[var(--primary)]/10 justify-end">
-                  <button type="button" onClick={handleArticleCancel} className="px-5 py-2 rounded-lg font-semibold bg-[var(--border)] text-[var(--muted)] hover:bg-[var(--border)]/80 transition">Annuler</button>
-                  <button type="submit" className="px-5 py-2 rounded-lg font-semibold bg-[var(--primary)] text-white hover:bg-[var(--primary-dark)] shadow transition">Enregistrer</button>
+                <div className="flex flex-col sm:flex-row gap-3 px-4 sm:px-6 pb-4 sm:pb-6 pt-2 border-t border-[var(--primary)]/20 bg-gradient-to-r from-[var(--primary)]/5 to-[var(--primary)]/10 justify-end sticky bottom-0 bg-[var(--card)] z-10">
+                  <button type="button" onClick={handleArticleCancel} className="px-4 sm:px-5 py-3 sm:py-2 rounded-lg font-semibold bg-[var(--border)] text-[var(--muted)] hover:bg-[var(--border)]/80 transition text-sm">Annuler</button>
+                  <button type="submit" className="px-4 sm:px-5 py-3 sm:py-2 rounded-lg font-semibold bg-[var(--primary)] text-white hover:bg-[var(--primary-dark)] shadow transition text-sm">Enregistrer</button>
                 </div>
-                <button type="button" onClick={handleArticleCancel} className="absolute top-3 right-3 text-[var(--muted)] hover:text-[var(--danger)] text-2xl font-bold focus:outline-none">&times;</button>
+                <button type="button" onClick={handleArticleCancel} className="absolute top-3 right-3 text-[var(--muted)] hover:text-[var(--danger)] text-xl sm:text-2xl font-bold focus:outline-none w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--border)] transition">&times;</button>
               </form>
             </div>
           )}
@@ -570,78 +575,88 @@ export default function AccueilERPTest() {
             </div>
           )}
           {/* --- TABLE --- */}
-          <div className="overflow-x-auto w-full mt-4">
-            <table className="min-w-full divide-y divide-[var(--border)] text-sm">
-              <thead className="bg-[var(--primary)]/5">
-                <tr>
-                  {columns.map((col) => (
-                    <th key={col} className="px-4 py-3 text-left font-semibold text-[var(--primary-dark)] whitespace-nowrap text-sm tracking-wide">{col}</th>
-                  ))}
-                  {(activeMenu === "tiers" || activeMenu === "articles" || activeMenu === "achat") && <th className="px-4 py-3"></th>}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.length === 0 ? (
+          <div className="overflow-x-auto w-full mt-4 rounded-xl border border-[var(--border)]">
+            <div className="min-w-full">
+              <table className="w-full divide-y divide-[var(--border)] text-sm">
+                <thead className="bg-[var(--primary)]/5">
                   <tr>
-                    <td colSpan={columns.length + ((activeMenu === "tiers" || activeMenu === "articles" || activeMenu === "achat") ? 1 : 0)} className="text-center text-[var(--muted)] py-8">Aucune donnée</td>
+                    {columns.map((col) => (
+                      <th key={col} className="px-3 sm:px-4 py-3 text-left font-semibold text-[var(--primary-dark)] whitespace-nowrap text-xs sm:text-sm tracking-wide">{col}</th>
+                    ))}
+                    {(activeMenu === "tiers" || activeMenu === "articles" || activeMenu === "achat") && <th className="px-3 sm:px-4 py-3"></th>}
                   </tr>
-                ) : (
-                  rows.map((row, idx) => (
-                    <tr key={idx} className={idx % 2 === 0 ? "bg-[var(--card)]" : "bg-[var(--table-row-alt)] hover:bg-[var(--primary)]/10 transition-colors"}>
-                      {row.map((cell, i) => (
-                        <td key={i} className="px-4 py-3 whitespace-nowrap text-sm">{cell}</td>
-                      ))}
-                      {activeMenu === "tiers" && (
-                        <td className="px-4 py-3 whitespace-nowrap flex gap-2">
-                          <button
-                            className="px-2 py-1 text-xs bg-[var(--warning)]/10 text-[var(--warning)] rounded hover:bg-[var(--warning)]/20 transition"
-                            onClick={() => handleEditClient(clients[idx].id)}
-                          >
-                            Éditer
-                          </button>
-                        </td>
-                      )}
-                      {activeMenu === "articles" && (
-                        <td className="px-4 py-3 whitespace-nowrap flex gap-2">
-                          <button
-                            className="px-2 py-1 text-xs bg-[var(--warning)]/10 text-[var(--warning)] rounded hover:bg-[var(--warning)]/20 transition"
-                            onClick={() => handleEditArticle(idx)}
-                          >
-                            Éditer
-                          </button>
-                        </td>
-                      )}
-                      {activeMenu === "achat" && (
-                        <td className="px-4 py-3 whitespace-nowrap flex gap-2">
-                          <button
-                            className="px-2 py-1 text-xs bg-[var(--warning)]/10 text-[var(--warning)] rounded hover:bg-[var(--warning)]/20 transition"
-                            onClick={() => handleEditAchat(idx)}
-                          >
-                            Éditer
-                          </button>
-                        </td>
-                      )}
-                      {activeMenu === "ventes" && (
-                        <td className="px-4 py-3 whitespace-nowrap flex gap-2">
-                          <button
-                            className="px-2 py-1 text-xs bg-[var(--warning)]/10 text-[var(--warning)] rounded hover:bg-[var(--warning)]/20 transition"
-                            disabled
-                          >
-                            Éditer
-                          </button>
-                          <button
-                            className="px-2 py-1 text-xs bg-[var(--danger)]/10 text-[var(--danger)] rounded hover:bg-[var(--danger)]/20 transition"
-                            onClick={() => handleDeleteVente(idx)}
-                          >
-                            Supprimer
-                          </button>
-                        </td>
-                      )}
+                </thead>
+                <tbody>
+                  {rows.length === 0 ? (
+                    <tr>
+                      <td colSpan={columns.length + ((activeMenu === "tiers" || activeMenu === "articles" || activeMenu === "achat") ? 1 : 0)} className="text-center text-[var(--muted)] py-8 text-sm">Aucune donnée</td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    rows.map((row, idx) => (
+                      <tr key={idx} className={idx % 2 === 0 ? "bg-[var(--card)]" : "bg-[var(--table-row-alt)] hover:bg-[var(--primary)]/10 transition-colors"}>
+                        {row.map((cell, i) => (
+                          <td key={i} className="px-3 sm:px-4 py-3 whitespace-nowrap text-xs sm:text-sm">{cell}</td>
+                        ))}
+                        {activeMenu === "tiers" && (
+                          <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
+                            <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                              <button
+                                className="px-2 py-1.5 sm:py-1 text-xs bg-[var(--warning)]/10 text-[var(--warning)] rounded hover:bg-[var(--warning)]/20 transition"
+                                onClick={() => handleEditClient(clients[idx].id)}
+                              >
+                                Éditer
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                        {activeMenu === "articles" && (
+                          <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
+                            <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                              <button
+                                className="px-2 py-1.5 sm:py-1 text-xs bg-[var(--warning)]/10 text-[var(--warning)] rounded hover:bg-[var(--warning)]/20 transition"
+                                onClick={() => handleEditArticle(idx)}
+                              >
+                                Éditer
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                        {activeMenu === "achat" && (
+                          <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
+                            <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                              <button
+                                className="px-2 py-1.5 sm:py-1 text-xs bg-[var(--warning)]/10 text-[var(--warning)] rounded hover:bg-[var(--warning)]/20 transition"
+                                onClick={() => handleEditAchat(idx)}
+                              >
+                                Éditer
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                                              {activeMenu === "ventes" && (
+                        <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
+                          <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                            <button
+                              className="px-2 py-1.5 sm:py-1 text-xs bg-[var(--warning)]/10 text-[var(--warning)] rounded hover:bg-[var(--warning)]/20 transition"
+                              onClick={() => handleEditVente(ventes[idx].id)}
+                            >
+                              Éditer
+                            </button>
+                            <button
+                              className="px-2 py-1.5 sm:py-1 text-xs bg-[var(--danger)]/10 text-[var(--danger)] rounded hover:bg-[var(--danger)]/20 transition"
+                              onClick={() => handleDeleteVente(idx)}
+                            >
+                              Supprimer
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
           {/* ...modals and dialogs: update to use new palette, spacing, and shadow... */}
         </div>

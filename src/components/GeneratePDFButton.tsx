@@ -5,14 +5,15 @@ import type { InvoiceData } from '@/types/invoice';
 import { generateInvoicePDF } from '@/utils/pdfGenerator';
 import PreviewPDFButton from './PreviewPDFButton';
 import { useRouter } from 'next/navigation';
-import { addInvoice, getVentes, setVentes } from '@/utils/invoiceStorage';
+import { addInvoice, getVentes, setVentes, addCompleteInvoice } from '@/utils/invoiceStorage';
 import localforage from 'localforage';
 
 interface GeneratePDFButtonProps {
   invoiceData: InvoiceData;
+  isEditing?: boolean;
 }
 
-export default function GeneratePDFButton({ invoiceData }: GeneratePDFButtonProps) {
+export default function GeneratePDFButton({ invoiceData, isEditing = false }: GeneratePDFButtonProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
@@ -50,9 +51,16 @@ export default function GeneratePDFButton({ invoiceData }: GeneratePDFButtonProp
         })),
       };
       await addInvoice(invoiceToSave);
-      // Add vente to ventes table
+
+      // Save complete invoice data for editing
+      const completeInvoiceData = {
+        id: invoiceData.meta.invoiceNumber,
+        ...invoiceData,
+      };
+      await addCompleteInvoice(completeInvoiceData);
+      // Update or add vente to ventes table
       const ventes = await getVentes();
-      const newVente = {
+      const updatedVente = {
         id: invoiceData.meta.invoiceNumber,
         client: invoiceData.client.clientName,
         date: invoiceData.meta.date,
@@ -61,10 +69,26 @@ export default function GeneratePDFButton({ invoiceData }: GeneratePDFButtonProp
         nombreItems: invoiceData.items.length,
         unitPrice: invoiceData.items.length > 0 ? invoiceData.items[0].unitPrice : 0,
       };
-      console.log("Creating new vente:", newVente);
+      
+      if (isEditing) {
+        // Update existing vente
+        const existingIndex = ventes.findIndex(v => v.id === invoiceData.meta.invoiceNumber);
+        if (existingIndex !== -1) {
+          ventes[existingIndex] = updatedVente;
+          console.log("Updating existing vente:", updatedVente);
+        } else {
+          // If not found, add as new (fallback)
+          ventes.push(updatedVente);
+          console.log("Adding new vente (fallback):", updatedVente);
+        }
+      } else {
+        // Add new vente
+        ventes.push(updatedVente);
+        console.log("Creating new vente:", updatedVente);
+      }
+      
       console.log("Invoice totals:", invoiceData.totals);
       console.log("Invoice items:", invoiceData.items);
-      ventes.push(newVente);
       await setVentes(ventes);
       // Set highlight flag for Mes Factures
       await localforage.setItem('highlightInvoiceId', invoiceToSave.id);
@@ -130,8 +154,12 @@ export default function GeneratePDFButton({ invoiceData }: GeneratePDFButtonProp
             </svg>
           </div>
           <div>
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 group-hover:text-indigo-600 transition-colors duration-300">Générer le PDF</h2>
-            <p className="text-sm sm:text-base text-gray-600 group-hover:text-gray-700 transition-colors duration-300">Créez votre facture au format PDF</p>
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 group-hover:text-indigo-600 transition-colors duration-300">
+              {isEditing ? 'Mettre à jour le PDF' : 'Générer le PDF'}
+            </h2>
+            <p className="text-sm sm:text-base text-gray-600 group-hover:text-gray-700 transition-colors duration-300">
+              {isEditing ? 'Mettez à jour votre facture au format PDF' : 'Créez votre facture au format PDF'}
+            </p>
           </div>
         </div>
 
@@ -193,7 +221,7 @@ export default function GeneratePDFButton({ invoiceData }: GeneratePDFButtonProp
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 <span className="text-sm sm:text-base">
-                  {isGenerating ? 'Génération...' : isSuccess ? 'PDF créé!' : 'Générer le PDF'}
+                  {isGenerating ? 'Génération...' : isSuccess ? 'PDF créé!' : (isEditing ? 'Mettre à jour le PDF' : 'Générer le PDF')}
                 </span>
               </div>
             </button>

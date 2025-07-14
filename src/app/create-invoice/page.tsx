@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import type { Company, Client, InvoiceMeta, Item, Totals, InvoiceData } from '@/types/invoice';
 import CompanyInfo from '@/components/CompanyInfo';
 import ClientInfo from '@/components/ClientInfo';
@@ -8,8 +9,13 @@ import InvoiceMetaComponent from '@/components/InvoiceMeta';
 import ItemsList from '@/components/ItemsList';
 import GeneratePDFButton from '@/components/GeneratePDFButton';
 import { generateNextInvoiceNumber } from '@/utils/invoiceNumberGenerator';
+import { getCompleteInvoiceById } from '@/utils/invoiceStorage';
 
 export default function CreateInvoicePage() {
+  const searchParams = useSearchParams();
+  const editInvoiceId = searchParams.get('edit');
+  const isEditing = !!editInvoiceId;
+
   const [company, setCompany] = useState<Company>({
     companyName: '',
     activity: '',
@@ -44,16 +50,30 @@ export default function CreateInvoicePage() {
     notes: '',
   });
 
-  // Auto-generate invoice number on component mount
+  // Load invoice data for editing or generate new invoice number
   useEffect(() => {
     (async () => {
-      const nextInvoiceNumber = await generateNextInvoiceNumber();
-      setMeta(prev => ({
-        ...prev,
-        invoiceNumber: nextInvoiceNumber,
-      }));
+      if (isEditing && editInvoiceId) {
+        // Load existing invoice data
+        const invoice = await getCompleteInvoiceById(editInvoiceId);
+        if (invoice) {
+          // Load complete invoice data
+          setCompany(invoice.company);
+          setClient(invoice.client);
+          setMeta(invoice.meta);
+          setItems(invoice.items);
+          setTotals(invoice.totals);
+        }
+      } else {
+        // Generate new invoice number for new invoice
+        const nextInvoiceNumber = await generateNextInvoiceNumber();
+        setMeta(prev => ({
+          ...prev,
+          invoiceNumber: nextInvoiceNumber,
+        }));
+      }
     })();
-  }, []);
+  }, [isEditing, editInvoiceId]);
 
   const [items, setItems] = useState<Item[]>([]);
 
@@ -91,7 +111,7 @@ export default function CreateInvoicePage() {
             </svg>
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent mb-4 sm:mb-6 animate-fade-in px-4">
-            Générateur de Factures
+            {isEditing ? 'Modifier la Facture' : 'Générateur de Factures'}
           </h1>
           <p className="text-lg sm:text-xl text-gray-600 max-w-2xl sm:max-w-3xl mx-auto leading-relaxed animate-fade-in-delay px-4">
             Créez des factures professionnelles avec une interface moderne et intuitive
@@ -141,7 +161,7 @@ export default function CreateInvoicePage() {
 
           {/* Bouton Générer PDF */}
           <div className="transform hover:scale-[1.01] sm:hover:scale-[1.02] transition-transform duration-300">
-            <GeneratePDFButton invoiceData={invoiceData} />
+            <GeneratePDFButton invoiceData={invoiceData} isEditing={isEditing} />
           </div>
         </div>
 
