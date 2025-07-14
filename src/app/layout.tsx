@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Générateur de Factures - DZ Invoice",
+  title: "ERP - DZ Invoice",
   description: "Application de génération de factures professionnelles",
 };
 

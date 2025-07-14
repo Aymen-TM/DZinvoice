@@ -6,7 +6,7 @@ import Link from "next/link";
 const NAV_LINKS = [
   { name: "Mes Factures", href: "/" },
   { name: "Créer une facture", href: "/create-invoice" },
-  { name: "Accueil", href: "/home" },
+  { name: "ERP", href: "/erp" },
   { name: "Politique de confidentialité", href: "/privacy-policy" },
 ];
 
