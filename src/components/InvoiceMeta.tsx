@@ -16,8 +16,8 @@ export default function InvoiceMeta({ meta, onMetaChange }: InvoiceMetaProps) {
     });
   };
 
-  const handleRegenerateInvoiceNumber = () => {
-    const nextInvoiceNumber = generateNextInvoiceNumber();
+  const handleRegenerateInvoiceNumber = async () => {
+    const nextInvoiceNumber = await generateNextInvoiceNumber();
     onMetaChange({
       ...meta,
       invoiceNumber: nextInvoiceNumber,
