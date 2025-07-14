@@ -1,18 +1,20 @@
 "use client";
 import { useState, useEffect } from "react";
-// For Excel export
-import { utils as XLSXUtils, writeFile as XLSXWriteFile } from 'xlsx';
-import { getClients, setClients, getArticles, setArticles, getAchats, setAchats, getStock, setStock, Client, Article, Achat, AchatArticle, StockItem } from '@/utils/invoiceStorage';
-import { getVentes, setVentes, Vente, deleteInvoice } from '@/utils/invoiceStorage';
 import { useRouter } from 'next/navigation';
-
-const MENU_ITEMS = [
-  { key: "tiers", label: "Tiers" },
-  { key: "articles", label: "Articles" },
-  { key: "achat", label: "Achat" },
-  { key: "stock", label: "Stock" },
-  { key: "ventes", label: "Ventes" },
-];
+import type { Client, Article, Achat, AchatArticle, StockItem, Vente } from '@/types/erp';
+import { 
+  getClients, setClients, getArticles, setArticles, 
+  getAchats, setAchats, getStock, setStock 
+} from '@/utils/erpStorage';
+import { getVentes, setVentes, deleteInvoice } from '@/utils/invoiceStorage';
+import { 
+  exportClients, exportArticles, exportAchats, 
+  exportStock, exportVentes 
+} from '@/utils/erpExport';
+import ERPNavbar from '@/components/erp/ERPNavbar';
+import ERPToolbar from '@/components/erp/ERPToolbar';
+import ERPTable from '@/components/erp/ERPTable';
+import { ERP_MENU_ITEMS, DEFAULT_CLIENT_FORM, DEFAULT_ARTICLE_FORM, DEFAULT_ACHAT_FORM } from '@/constants/erp';
 
 const TOOLBAR_BUTTONS = [
   { key: "new", label: "New" },
@@ -38,35 +40,11 @@ const TABLE_DATA = {
   ],
 };
 
-const emptyClient: Omit<Client, "id"> = {
-  codeTiers: "",
-  raisonSocial: "",
-  famille: "Clients",
-  nom: "",
-  prenom: "",
-  activite: "",
-  adresse: "",
-  ville: "",
-  rc: "",
-  nif: "",
-  nis: "",
-  ai: "",
-};
+const emptyClient: Omit<Client, "id"> = DEFAULT_CLIENT_FORM;
 
-const emptyArticle: Article = {
-  ref: '',
-  designation: '',
-  qte: 0,
-  prixAchat: 0,
-  prixVente: 0,
-};
+const emptyArticle: Article = DEFAULT_ARTICLE_FORM;
 
-const emptyAchat: Omit<Achat, 'id'> = {
-  fournisseur: '',
-  date: '',
-  montant: 0,
-  articles: [],
-};
+const emptyAchat: Omit<Achat, 'id'> = DEFAULT_ACHAT_FORM;
 const emptyAchatArticle: AchatArticle = {
   ref: '',
   designation: '',
@@ -307,7 +285,7 @@ export default function AccueilERPTest() {
         });
       }
     });
-    await saveStock(newStock);
+    await setStock(newStock);
     setAchatForm(emptyAchat);
     setShowAchatForm(false);
   };
@@ -420,111 +398,38 @@ export default function AccueilERPTest() {
     ? [
         { key: "new", label: "Nouveau", onClick: () => setShowClientForm(true) },
         { key: "refresh", label: "Rafraîchir", onClick: async () => { const c = await getClients() as Client[]; setClientsState(c); } },
-        { key: "export", label: "Exporter", onClick: () => handleExportClients() },
+        { key: "export", label: "Exporter", onClick: () => exportClients(clients) },
       ]
     : activeMenu === "articles"
     ? [
         { key: "new", label: "Nouveau", onClick: () => { setShowArticleForm(true); setEditArticleIdx(null); setArticleForm(emptyArticle); } },
         { key: "refresh", label: "Rafraîchir", onClick: async () => { const a = await getArticles() as Article[]; setArticlesState(a); } },
-        { key: "export", label: "Exporter", onClick: () => handleExportArticles() },
+        { key: "export", label: "Exporter", onClick: () => exportArticles(articles) },
       ]
     : activeMenu === "achat"
     ? [
         { key: "new", label: "Nouveau", onClick: () => { setShowAchatForm(true); setEditAchatIdx(null); setAchatForm(emptyAchat); } },
         { key: "refresh", label: "Rafraîchir", onClick: async () => { const ac = await getAchats() as Achat[]; setAchatsState(ac); } },
-        { key: "export", label: "Exporter", onClick: () => handleExportAchats() },
+        { key: "export", label: "Exporter", onClick: () => exportAchats(achats) },
       ]
     : activeMenu === "stock"
     ? [
-        { key: "export", label: "Exporter", onClick: () => handleExportStock() },
+        { key: "export", label: "Exporter", onClick: () => exportStock(stock) },
       ]
     : activeMenu === "ventes"
     ? [
         { key: "new", label: "Nouveau", onClick: () => router.push('/create-invoice') },
         { key: "refresh", label: "Rafraîchir", onClick: async () => { const v = await getVentes() as Vente[]; setVentesState(v); } },
-        { key: "export", label: "Exporter", onClick: () => handleExportVentes() },
+        { key: "export", label: "Exporter", onClick: () => exportVentes(ventes) },
       ]
     : TOOLBAR_BUTTONS;
-
-  // Export stock to Excel
-  function handleExportStock() {
-    if (stock.length === 0) return;
-    const ws = XLSXUtils.json_to_sheet(stock.map(({ ref, designation, depot, quantite }) => ({
-      'Référence': ref,
-      'Désignation': designation,
-      'Dépôt': depot,
-      'Quantité': quantite,
-    })));
-    const wb = XLSXUtils.book_new();
-    XLSXUtils.book_append_sheet(wb, ws, 'Stock');
-    XLSXWriteFile(wb, 'stock.xlsx');
-  }
-  // Export clients to Excel
-  function handleExportClients() {
-    if (clients.length === 0) return;
-    const ws = XLSXUtils.json_to_sheet(clients.map(({ codeTiers, raisonSocial, famille, activite, adresse, ville, rc, nif, nis, ai }) => ({
-      'Code Tiers': codeTiers,
-      'Raison Sociale': raisonSocial,
-      'Famille': famille,
-      'Activité': activite,
-      'Adresse': adresse,
-      'Ville': ville,
-      'RC': rc,
-      'NIF': nif,
-      'NIS': nis,
-      'AI': ai,
-    })));
-    const wb = XLSXUtils.book_new();
-    XLSXUtils.book_append_sheet(wb, ws, 'Tiers');
-    XLSXWriteFile(wb, 'clients.xlsx');
-  }
-  // Export articles to Excel
-  function handleExportArticles() {
-    if (articles.length === 0) return;
-    const ws = XLSXUtils.json_to_sheet(articles.map(({ ref, designation, prixAchat, prixVente }) => ({
-      'Référence': ref,
-      'Désignation': designation,
-      'Prix Achat HT': prixAchat,
-      'Prix Vente HT': prixVente,
-    })));
-    const wb = XLSXUtils.book_new();
-    XLSXUtils.book_append_sheet(wb, ws, 'Articles');
-    XLSXWriteFile(wb, 'articles.xlsx');
-  }
-  // Export achats to Excel
-  function handleExportAchats() {
-    if (achats.length === 0) return;
-    const ws = XLSXUtils.json_to_sheet(achats.map(({ id, fournisseur, date, montant, articles }) => ({
-      'ID': id,
-      'Fournisseur': fournisseur,
-      'Date': date,
-      'Montant': montant,
-      'Articles': articles.map(a => `${a.ref} (${a.designation}) x${a.quantite} [${a.depot}]`).join('; '),
-    })));
-    const wb = XLSXUtils.book_new();
-    XLSXUtils.book_append_sheet(wb, ws, 'Achats');
-    XLSXWriteFile(wb, 'achats.xlsx');
-  }
-  // Export ventes to Excel
-  function handleExportVentes() {
-    if (ventes.length === 0) return;
-    const ws = XLSXUtils.json_to_sheet(ventes.map(({ id, client, date, montant }) => ({
-      'ID': id,
-      'Client': client,
-      'Date': date,
-      'Montant': montant,
-    })));
-    const wb = XLSXUtils.book_new();
-    XLSXUtils.book_append_sheet(wb, ws, 'Ventes');
-    XLSXWriteFile(wb, 'ventes.xlsx');
-  }
 
   return (
     <div className="min-h-screen bg-[var(--background)] flex flex-col pt-16 font-sans">
       {/* Top Menu Bar */}
       <nav className="w-full bg-[var(--card)] shadow z-30 flex flex-col sm:flex-row items-center h-auto sm:h-16 px-2 sm:px-8 border-b border-[var(--border)] sticky top-0">
         <div className="flex flex-wrap gap-2 sm:gap-6 w-full justify-center sm:justify-start py-2 sm:py-0">
-          {MENU_ITEMS.map((item) => (
+          {ERP_MENU_ITEMS.map((item) => (
             <button
               key={item.key}
               className={`px-4 py-2 font-semibold text-sm rounded-xl transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 ${activeMenu === item.key ? "bg-[var(--primary)] text-white shadow" : "text-[var(--primary-dark)] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)]"}`}
@@ -554,7 +459,7 @@ export default function AccueilERPTest() {
       {/* Main Content Area */}
       <main className="flex-1 p-2 sm:p-8 pt-4 sm:pt-10 overflow-x-auto">
         <div className="bg-[var(--card)] rounded-2xl shadow-lg border border-[var(--border)] p-2 sm:p-8">
-          <h2 className="text-lg sm:text-2xl font-bold mb-6 text-[var(--primary-dark)] tracking-tight">{MENU_ITEMS.find((m) => m.key === activeMenu)?.label}</h2>
+          <h2 className="text-lg sm:text-2xl font-bold mb-6 text-[var(--primary-dark)] tracking-tight">{ERP_MENU_ITEMS.find((m) => m.key === activeMenu)?.label}</h2>
           {/* --- FORMS --- */}
           {activeMenu === "tiers" && showClientForm && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
