@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 // For Excel export
 import { utils as XLSXUtils, writeFile as XLSXWriteFile } from 'xlsx';
-import { getClients, setClients, getArticles, setArticles, getAchats, setAchats, getStock, setStock } from '@/utils/invoiceStorage';
+import { getClients, setClients, getArticles, setArticles, getAchats, setAchats, getStock, setStock, Client, Article, Achat, AchatArticle, StockItem } from '@/utils/invoiceStorage';
 
 const MENU_ITEMS = [
   { key: "tiers", label: "Tiers" },
@@ -39,22 +39,6 @@ const TABLE_DATA = {
   ],
 };
 
-interface Client {
-  id: string;
-  codeTiers: string;
-  raisonSocial: string;
-  famille: string;
-  nom: string;
-  prenom: string;
-  activite: string;
-  adresse: string;
-  ville: string;
-  rc: string;
-  nif: string;
-  nis: string;
-  ai: string;
-}
-
 const emptyClient: Omit<Client, "id"> = {
   codeTiers: "",
   raisonSocial: "",
@@ -70,15 +54,6 @@ const emptyClient: Omit<Client, "id"> = {
   ai: "",
 };
 
-// Article type and emptyArticle
-interface Article {
-  ref: string;
-  designation: string;
-  qte: number;
-  prixAchat: number;
-  prixVente: number;
-}
-
 const emptyArticle: Article = {
   ref: '',
   designation: '',
@@ -86,22 +61,6 @@ const emptyArticle: Article = {
   prixAchat: 0,
   prixVente: 0,
 };
-
-// Achat type and emptyAchat
-interface AchatArticle {
-  ref: string;
-  designation: string;
-  quantite: number;
-  depot: string;
-}
-
-interface Achat {
-  id: number;
-  fournisseur: string;
-  date: string;
-  montant: number;
-  articles: AchatArticle[];
-}
 
 const emptyAchat: Omit<Achat, 'id'> = {
   fournisseur: '',
@@ -115,13 +74,6 @@ const emptyAchatArticle: AchatArticle = {
   quantite: 1,
   depot: '',
 };
-
-interface StockItem {
-  ref: string;
-  designation: string;
-  depot: string;
-  quantite: number;
-}
 
 type ToolbarButton = { key: string; label: string; onClick?: () => void };
 
@@ -205,7 +157,7 @@ export default function AccueilERPTest() {
   const handleEditClient = (id: string) => {
     const client = clients.find((c) => c.id === id);
     if (client) {
-      const { id: _id, ...rest } = client;
+      const { /* id: _id, */ ...rest } = client;
       setClientForm(rest);
       setEditClientId(id);
       setShowClientForm(true);
@@ -335,7 +287,7 @@ export default function AccueilERPTest() {
       await saveAchats(newAchats);
     }
     // Update stock for each article in achat
-    let newStock = [...stock];
+    const newStock = [...stock];
     achatForm.articles.forEach(art => {
       if (!art.ref && !art.designation) return;
       const idx = newStock.findIndex(s => s.ref === art.ref && s.depot === art.depot);
@@ -362,7 +314,7 @@ export default function AccueilERPTest() {
   };
 
   const handleEditAchat = (idx: number) => {
-    const { id, ...rest } = achats[idx];
+    const { id: _id, ...rest } = achats[idx];
     setAchatForm(rest);
     setEditAchatIdx(idx);
     setShowAchatForm(true);
@@ -513,12 +465,12 @@ export default function AccueilERPTest() {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col pt-16">
       {/* Top Menu Bar */}
-      <nav className="w-full bg-white shadow z-30 flex items-center h-14 px-4 border-b border-gray-200">
-        <div className="flex space-x-6">
+      <nav className="w-full bg-white shadow z-30 flex flex-col sm:flex-row items-center h-auto sm:h-14 px-2 sm:px-4 border-b border-gray-200 sticky top-0">
+        <div className="flex flex-wrap gap-2 sm:gap-6 w-full justify-center sm:justify-start py-2 sm:py-0">
           {MENU_ITEMS.map((item) => (
             <button
               key={item.key}
-              className={`px-4 py-2 font-semibold text-sm rounded transition-colors duration-200 ${activeMenu === item.key ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-blue-50"}`}
+              className={`px-3 sm:px-4 py-2 font-semibold text-xs sm:text-sm rounded transition-colors duration-200 ${activeMenu === item.key ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-blue-50"}`}
               onClick={() => setActiveMenu(item.key)}
             >
               {item.label}
@@ -528,12 +480,12 @@ export default function AccueilERPTest() {
       </nav>
 
       {/* Toolbar */}
-      <div className="bg-gray-50 border-b border-gray-200 shadow-sm flex items-center px-4 h-12 z-30">
-        <div className="flex space-x-2">
+      <div className="bg-gray-50 border-b border-gray-200 shadow-sm flex flex-col sm:flex-row items-center px-2 sm:px-4 h-auto sm:h-12 z-30 sticky top-14">
+        <div className="flex flex-wrap gap-2 w-full justify-center sm:justify-start py-2 sm:py-0">
           {toolbarButtons.map((btn) => (
             <button
               key={btn.key}
-              className="px-3 py-1.5 bg-white border border-gray-200 rounded text-gray-700 font-medium text-xs hover:bg-blue-100 transition-colors"
+              className="px-3 sm:px-3 py-2 sm:py-1.5 bg-white border border-gray-200 rounded text-gray-700 font-medium text-xs sm:text-xs hover:bg-blue-100 transition-colors"
               {...(typeof btn.onClick === 'function' ? { onClick: btn.onClick } : {})}
             >
               {btn.label}
@@ -543,22 +495,22 @@ export default function AccueilERPTest() {
       </div>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-6 pt-8 overflow-x-auto">
-        <div className="bg-white rounded-xl shadow border border-gray-100 p-4">
-          <h2 className="text-lg font-bold mb-4 text-blue-700">{MENU_ITEMS.find((m) => m.key === activeMenu)?.label}</h2>
+      <main className="flex-1 p-2 sm:p-6 pt-4 sm:pt-8 overflow-x-auto">
+        <div className="bg-white rounded-xl shadow border border-gray-100 p-2 sm:p-4">
+          <h2 className="text-base sm:text-lg font-bold mb-4 text-blue-700">{MENU_ITEMS.find((m) => m.key === activeMenu)?.label}</h2>
           {activeMenu === "tiers" && showClientForm && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
               <form
                 onSubmit={handleClientSubmit}
-                className="relative bg-white rounded-2xl shadow-2xl border border-blue-100 w-full max-w-2xl p-0 overflow-hidden animate-fade-in"
+                className="relative bg-white rounded-2xl shadow-2xl border border-blue-100 w-full max-w-lg sm:max-w-2xl p-0 overflow-hidden animate-fade-in mx-2"
               >
-                <div className="flex items-center gap-3 px-6 pt-6 pb-2 border-b border-blue-100 bg-gradient-to-r from-blue-50 to-blue-100">
+                <div className="flex items-center gap-3 px-4 sm:px-6 pt-6 pb-2 border-b border-blue-100 bg-gradient-to-r from-blue-50 to-blue-100">
                   <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center shadow">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                   </div>
-                  <h3 className="text-xl font-bold text-blue-700">Ajouter / Modifier un client</h3>
+                  <h3 className="text-base sm:text-xl font-bold text-blue-700">Ajouter / Modifier un client</h3>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-6 py-6 bg-gradient-to-br from-white via-blue-50 to-blue-100">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 px-4 sm:px-6 py-4 sm:py-6 bg-gradient-to-br from-white via-blue-50 to-blue-100">
                   <div>
                     <label className="block font-semibold mb-1 text-blue-700">Code Tiers</label>
                     <input name="codeTiers" value={clientForm.codeTiers} onChange={handleClientChange} className="w-full px-4 py-2.5 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white/80 placeholder-gray-400 placeholder-opacity-100 transition" placeholder="Code Tiers" />
@@ -600,10 +552,10 @@ export default function AccueilERPTest() {
                     <input name="ai" value={clientForm.ai} onChange={handleClientChange} className="w-full px-4 py-2.5 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white/80 placeholder-gray-400 placeholder-opacity-100 transition" placeholder="AI" />
                   </div>
                 </div>
-                <div className="flex gap-3 px-6 pb-6 pt-2 border-t border-blue-100 bg-gradient-to-r from-blue-50 to-blue-100 justify-end">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 px-4 sm:px-6 pb-4 sm:pb-6 pt-2 border-t border-blue-100 bg-gradient-to-r from-blue-50 to-blue-100 justify-end">
                   <button type="button" onClick={handleClientCancel} className="px-5 py-2 rounded-lg font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition">Annuler</button>
                   <button type="submit" className="px-5 py-2 rounded-lg font-semibold bg-blue-600 text-white hover:bg-blue-700 shadow transition">Enregistrer</button>
-                  {clientError && <span className="text-red-500 ml-4 self-center">{clientError}</span>}
+                  {clientError && <span className="text-red-500 ml-4 self-center text-xs sm:text-sm">{clientError}</span>}
                 </div>
                 <button type="button" onClick={handleClientCancel} className="absolute top-3 right-3 text-gray-400 hover:text-red-500 text-2xl font-bold focus:outline-none">&times;</button>
               </form>
@@ -613,15 +565,15 @@ export default function AccueilERPTest() {
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
               <form
                 onSubmit={handleArticleSubmit}
-                className="relative bg-white rounded-2xl shadow-2xl border border-orange-100 w-full max-w-2xl p-0 overflow-hidden animate-fade-in"
+                className="relative bg-white rounded-2xl shadow-2xl border border-orange-100 w-full max-w-lg sm:max-w-2xl p-0 overflow-hidden animate-fade-in mx-2"
               >
-                <div className="flex items-center gap-3 px-6 pt-6 pb-2 border-b border-orange-100 bg-gradient-to-r from-orange-50 to-orange-100">
+                <div className="flex items-center gap-3 px-4 sm:px-6 pt-6 pb-2 border-b border-orange-100 bg-gradient-to-r from-orange-50 to-orange-100">
                   <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center shadow">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
                   </div>
-                  <h3 className="text-xl font-bold text-orange-700">Ajouter / Modifier un article</h3>
+                  <h3 className="text-base sm:text-xl font-bold text-orange-700">Ajouter / Modifier un article</h3>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-6 py-6 bg-gradient-to-br from-white via-orange-50 to-orange-100">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 px-4 sm:px-6 py-4 sm:py-6 bg-gradient-to-br from-white via-orange-50 to-orange-100">
                   <div>
                     <label className="block font-semibold mb-1 text-orange-700">Référence *</label>
                     <input name="ref" value={articleForm.ref} onChange={handleArticleChange} required className="w-full px-4 py-2.5 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white/80 placeholder-gray-400 placeholder-opacity-100 transition" placeholder="Référence" />
@@ -639,7 +591,7 @@ export default function AccueilERPTest() {
                     <input name="prixVente" type="number" value={articleForm.prixVente} onChange={handleArticleChange} className="w-full px-4 py-2.5 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white/80 placeholder-gray-400 placeholder-opacity-100 transition" placeholder="Prix Vente HT" />
                   </div>
                 </div>
-                <div className="flex gap-3 px-6 pb-6 pt-2 border-t border-orange-100 bg-gradient-to-r from-orange-50 to-orange-100 justify-end">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 px-4 sm:px-6 pb-4 sm:pb-6 pt-2 border-t border-orange-100 bg-gradient-to-r from-orange-50 to-orange-100 justify-end">
                   <button type="button" onClick={handleArticleCancel} className="px-5 py-2 rounded-lg font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition">Annuler</button>
                   <button type="submit" className="px-5 py-2 rounded-lg font-semibold bg-orange-500 text-white hover:bg-orange-600 shadow transition">Enregistrer</button>
                 </div>
@@ -651,15 +603,15 @@ export default function AccueilERPTest() {
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
               <form
                 onSubmit={handleAchatSubmit}
-                className="relative bg-white rounded-2xl shadow-2xl border border-green-100 w-full max-w-2xl p-0 overflow-hidden animate-fade-in"
+                className="relative bg-white rounded-2xl shadow-2xl border border-green-100 w-full max-w-lg sm:max-w-2xl p-0 overflow-hidden animate-fade-in mx-2"
               >
-                <div className="flex items-center gap-3 px-6 pt-6 pb-2 border-b border-green-100 bg-gradient-to-r from-green-50 to-green-100">
+                <div className="flex items-center gap-3 px-4 sm:px-6 pt-6 pb-2 border-b border-green-100 bg-gradient-to-r from-green-50 to-green-100">
                   <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center shadow">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h1l2 9a2 2 0 002 2h8a2 2 0 002-2l2-9h1" /></svg>
                   </div>
-                  <h3 className="text-xl font-bold text-green-700">Ajouter / Modifier un achat</h3>
+                  <h3 className="text-base sm:text-xl font-bold text-green-700">Ajouter / Modifier un achat</h3>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-6 py-6 bg-gradient-to-br from-white via-green-50 to-green-100">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 px-4 sm:px-6 py-4 sm:py-6 bg-gradient-to-br from-white via-green-50 to-green-100">
                   <div>
                     <label className="block font-semibold mb-1 text-green-700">Fournisseur *</label>
                     <input name="fournisseur" value={achatForm.fournisseur} onChange={handleAchatChange} required className="w-full px-4 py-2.5 border border-green-200 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-400 bg-white/80 placeholder-gray-400 placeholder-opacity-100 transition" placeholder="Fournisseur" />
@@ -716,7 +668,7 @@ export default function AccueilERPTest() {
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-3 px-6 pb-6 pt-2 border-t border-green-100 bg-gradient-to-r from-green-50 to-green-100 justify-end">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 px-4 sm:px-6 pb-4 sm:pb-6 pt-2 border-t border-green-100 bg-gradient-to-r from-green-50 to-green-100 justify-end">
                   <button type="button" onClick={handleAchatCancel} className="px-5 py-2 rounded-lg font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition">Annuler</button>
                   <button type="submit" className="px-5 py-2 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 shadow transition">Enregistrer</button>
                 </div>
@@ -724,14 +676,14 @@ export default function AccueilERPTest() {
               </form>
             </div>
           )}
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
+          <div className="overflow-x-auto w-full">
+            <table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
               <thead className="bg-blue-50">
                 <tr>
                   {columns.map((col) => (
-                    <th key={col} className="px-4 py-2 text-left font-semibold text-blue-700 whitespace-nowrap">{col}</th>
+                    <th key={col} className="px-2 sm:px-4 py-2 text-left font-semibold text-blue-700 whitespace-nowrap text-xs sm:text-sm">{col}</th>
                   ))}
-                  {(activeMenu === "tiers" || activeMenu === "articles" || activeMenu === "achat") && <th className="px-4 py-2"></th>}
+                  {(activeMenu === "tiers" || activeMenu === "articles" || activeMenu === "achat") && <th className="px-2 sm:px-4 py-2"></th>}
                 </tr>
               </thead>
               <tbody>
@@ -743,10 +695,10 @@ export default function AccueilERPTest() {
                   rows.map((row, idx) => (
                     <tr key={idx} className="hover:bg-blue-50 transition-colors">
                       {row.map((cell, i) => (
-                        <td key={i} className="px-4 py-2 whitespace-nowrap">{cell}</td>
+                        <td key={i} className="px-2 sm:px-4 py-2 whitespace-nowrap text-xs sm:text-sm">{cell}</td>
                       ))}
                       {activeMenu === "tiers" && (
-                        <td className="px-4 py-2 whitespace-nowrap flex gap-2">
+                        <td className="px-2 sm:px-4 py-2 whitespace-nowrap flex gap-2">
                           <button
                             className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 transition"
                             onClick={() => handleEditClient(clients[idx].id)}
@@ -762,7 +714,7 @@ export default function AccueilERPTest() {
                         </td>
                       )}
                       {activeMenu === "articles" && (
-                        <td className="px-4 py-2 whitespace-nowrap flex gap-2">
+                        <td className="px-2 sm:px-4 py-2 whitespace-nowrap flex gap-2">
                           <button
                             className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 transition"
                             onClick={() => handleEditArticle(idx)}
@@ -778,7 +730,7 @@ export default function AccueilERPTest() {
                         </td>
                       )}
                       {activeMenu === "achat" && (
-                        <td className="px-4 py-2 whitespace-nowrap flex gap-2">
+                        <td className="px-2 sm:px-4 py-2 whitespace-nowrap flex gap-2">
                           <button
                             className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 transition"
                             onClick={() => handleEditAchat(idx)}

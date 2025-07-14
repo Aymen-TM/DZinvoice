@@ -1,5 +1,48 @@
 import localforage from 'localforage';
 
+// Move type definitions here for use in storage functions
+export interface Client {
+  id: string;
+  codeTiers: string;
+  raisonSocial: string;
+  famille: string;
+  nom: string;
+  prenom: string;
+  activite: string;
+  adresse: string;
+  ville: string;
+  rc: string;
+  nif: string;
+  nis: string;
+  ai: string;
+}
+export interface Article {
+  ref: string;
+  designation: string;
+  qte: number;
+  prixAchat: number;
+  prixVente: number;
+}
+export interface AchatArticle {
+  ref: string;
+  designation: string;
+  quantite: number;
+  depot: string;
+}
+export interface Achat {
+  id: number;
+  fournisseur: string;
+  date: string;
+  montant: number;
+  articles: AchatArticle[];
+}
+export interface StockItem {
+  ref: string;
+  designation: string;
+  depot: string;
+  quantite: number;
+}
+
 export interface InvoiceItem {
   description: string;
   quantity: number;
@@ -49,7 +92,7 @@ export async function getClients() {
   const clients = await localforage.getItem(CLIENTS_KEY);
   return clients || [];
 }
-export async function setClients(clients: any[]) {
+export async function setClients(clients: Client[]) {
   await localforage.setItem(CLIENTS_KEY, clients);
 }
 // ARTICLES
@@ -58,7 +101,7 @@ export async function getArticles() {
   const articles = await localforage.getItem(ARTICLES_KEY);
   return articles || [];
 }
-export async function setArticles(articles: any[]) {
+export async function setArticles(articles: Article[]) {
   await localforage.setItem(ARTICLES_KEY, articles);
 }
 // ACHATS
@@ -67,7 +110,7 @@ export async function getAchats() {
   const achats = await localforage.getItem(ACHATS_KEY);
   return achats || [];
 }
-export async function setAchats(achats: any[]) {
+export async function setAchats(achats: Achat[]) {
   await localforage.setItem(ACHATS_KEY, achats);
 }
 // STOCK
@@ -76,6 +119,6 @@ export async function getStock() {
   const stock = await localforage.getItem(STOCK_KEY);
   return stock || [];
 }
-export async function setStock(stock: any[]) {
+export async function setStock(stock: StockItem[]) {
   await localforage.setItem(STOCK_KEY, stock);
 } 

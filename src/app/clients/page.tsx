@@ -1,5 +1,4 @@
 "use client";
-import { useEffect, useState } from "react";
 
 interface Client {
   id: string;
@@ -14,19 +13,6 @@ interface Client {
   ai: string;
   nis: string;
 }
-
-const emptyClient: Omit<Client, "id"> = {
-  raisonSocial: "",
-  activite: "",
-  address: "",
-  phone: "",
-  email: "",
-  city: "",
-  rc: "",
-  nif: "",
-  ai: "",
-  nis: "",
-};
 
 export default function ClientsPage() {
   return <div className="p-8 text-gray-400 text-center">Page clients (à implémenter)</div>;
