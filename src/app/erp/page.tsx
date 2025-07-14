@@ -41,17 +41,14 @@ export default function AccueilERPTest() {
   const [clientForm, setClientForm] = useState<Omit<Client, "id">>(emptyClient);
   const [clientError, setClientError] = useState("");
   const [editClientId, setEditClientId] = useState<string | null>(null);
-  const [showDeleteId, setShowDeleteId] = useState<string | null>(null);
   const [articles, setArticlesState] = useState<Article[]>([]);
   const [showArticleForm, setShowArticleForm] = useState(false);
   const [articleForm, setArticleForm] = useState<Article>(emptyArticle);
   const [editArticleIdx, setEditArticleIdx] = useState<number | null>(null);
-  const [showDeleteArticleIdx, setShowDeleteArticleIdx] = useState<number | null>(null);
   const [achats, setAchatsState] = useState<Achat[]>([]);
   const [showAchatForm, setShowAchatForm] = useState(false);
   const [achatForm, setAchatForm] = useState<Omit<Achat, 'id'>>(emptyAchat);
   const [editAchatIdx, setEditAchatIdx] = useState<number | null>(null);
-  const [showDeleteAchatIdx, setShowDeleteAchatIdx] = useState<number | null>(null);
   const [stock, setStockState] = useState<StockItem[]>([]);
   const [ventes, setVentesState] = useState<Vente[]>([]);
   const [showDeleteVenteIdx, setShowDeleteVenteIdx] = useState<number | null>(null);
@@ -126,21 +123,9 @@ export default function AccueilERPTest() {
     }
   };
 
-  const handleDeleteClient = (id: string) => {
-    setShowDeleteId(id);
-  };
 
-  const confirmDeleteClient = async () => {
-    if (showDeleteId) {
-      const updatedClients = clients.filter((c) => c.id !== showDeleteId);
-      await saveClients(updatedClients);
-      setShowDeleteId(null);
-    }
-  };
 
-  const cancelDeleteClient = () => {
-    setShowDeleteId(null);
-  };
+
 
   // ARTICLE CRUD
   const saveArticles = async (newArticles: Article[]) => {
@@ -186,21 +171,9 @@ export default function AccueilERPTest() {
     setShowArticleForm(true);
   };
 
-  const handleDeleteArticle = (idx: number) => {
-    setShowDeleteArticleIdx(idx);
-  };
 
-  const confirmDeleteArticle = async () => {
-    if (showDeleteArticleIdx !== null) {
-      const updated = articles.filter((_, i) => i !== showDeleteArticleIdx);
-      await saveArticles(updated);
-      setShowDeleteArticleIdx(null);
-    }
-  };
 
-  const cancelDeleteArticle = () => {
-    setShowDeleteArticleIdx(null);
-  };
+
 
   // ACHAT CRUD
   const saveAchats = async (newAchats: Achat[]) => {
@@ -281,27 +254,9 @@ export default function AccueilERPTest() {
     setShowAchatForm(true);
   };
 
-  const handleDeleteAchat = (idx: number) => {
-    setShowDeleteAchatIdx(idx);
-  };
 
-  const confirmDeleteAchat = async () => {
-    if (showDeleteAchatIdx !== null) {
-      const updated = achats.filter((_, i) => i !== showDeleteAchatIdx);
-      await saveAchats(updated);
-      setShowDeleteAchatIdx(null);
-    }
-  };
 
-  const cancelDeleteAchat = () => {
-    setShowDeleteAchatIdx(null);
-  };
 
-  // STOCK CRUD
-  const saveStock = async (newStock: StockItem[]) => {
-    setStockState(newStock);
-    await setStock(newStock);
-  };
 
   // VENTE CRUD
   const saveVentes = async (newVentes: Vente[]) => {
@@ -644,12 +599,6 @@ export default function AccueilERPTest() {
                           >
                             Éditer
                           </button>
-                          <button
-                            className="px-2 py-1 text-xs bg-[var(--danger)]/10 text-[var(--danger)] rounded hover:bg-[var(--danger)]/20 transition"
-                            onClick={() => handleDeleteClient(clients[idx].id)}
-                          >
-                            Supprimer
-                          </button>
                         </td>
                       )}
                       {activeMenu === "articles" && (
@@ -660,12 +609,6 @@ export default function AccueilERPTest() {
                           >
                             Éditer
                           </button>
-                          <button
-                            className="px-2 py-1 text-xs bg-[var(--danger)]/10 text-[var(--danger)] rounded hover:bg-[var(--danger)]/20 transition"
-                            onClick={() => handleDeleteArticle(idx)}
-                          >
-                            Supprimer
-                          </button>
                         </td>
                       )}
                       {activeMenu === "achat" && (
@@ -675,12 +618,6 @@ export default function AccueilERPTest() {
                             onClick={() => handleEditAchat(idx)}
                           >
                             Éditer
-                          </button>
-                          <button
-                            className="px-2 py-1 text-xs bg-[var(--danger)]/10 text-[var(--danger)] rounded hover:bg-[var(--danger)]/20 transition"
-                            onClick={() => handleDeleteAchat(idx)}
-                          >
-                            Supprimer
                           </button>
                         </td>
                       )}
