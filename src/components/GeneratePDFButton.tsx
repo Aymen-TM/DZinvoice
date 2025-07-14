@@ -5,7 +5,7 @@ import type { InvoiceData } from '@/types/invoice';
 import { generateInvoicePDF } from '@/utils/pdfGenerator';
 import PreviewPDFButton from './PreviewPDFButton';
 import { useRouter } from 'next/navigation';
-import { addInvoice } from '@/utils/invoiceStorage';
+import { addInvoice, getVentes, setVentes } from '@/utils/invoiceStorage';
 import localforage from 'localforage';
 
 interface GeneratePDFButtonProps {
@@ -50,6 +50,22 @@ export default function GeneratePDFButton({ invoiceData }: GeneratePDFButtonProp
         })),
       };
       await addInvoice(invoiceToSave);
+      // Add vente to ventes table
+      const ventes = await getVentes();
+      const newVente = {
+        id: invoiceData.meta.invoiceNumber,
+        client: invoiceData.client.clientName,
+        date: invoiceData.meta.date,
+        montant: invoiceData.totals.montantTTC,
+        prixHT: invoiceData.totals.montantHT,
+        nombreItems: invoiceData.items.length,
+        unitPrice: invoiceData.items.length > 0 ? invoiceData.items[0].unitPrice : 0,
+      };
+      console.log("Creating new vente:", newVente);
+      console.log("Invoice totals:", invoiceData.totals);
+      console.log("Invoice items:", invoiceData.items);
+      ventes.push(newVente);
+      await setVentes(ventes);
       // Set highlight flag for Mes Factures
       await localforage.setItem('highlightInvoiceId', invoiceToSave.id);
       setShowSuccessModal(true);

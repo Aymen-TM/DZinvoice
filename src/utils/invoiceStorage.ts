@@ -1,48 +1,6 @@
 import localforage from 'localforage';
 
-// Move type definitions here for use in storage functions
-export interface Client {
-  id: string;
-  codeTiers: string;
-  raisonSocial: string;
-  famille: string;
-  nom: string;
-  prenom: string;
-  activite: string;
-  adresse: string;
-  ville: string;
-  rc: string;
-  nif: string;
-  nis: string;
-  ai: string;
-}
-export interface Article {
-  ref: string;
-  designation: string;
-  qte: number;
-  prixAchat: number;
-  prixVente: number;
-}
-export interface AchatArticle {
-  ref: string;
-  designation: string;
-  quantite: number;
-  depot: string;
-}
-export interface Achat {
-  id: number;
-  fournisseur: string;
-  date: string;
-  montant: number;
-  articles: AchatArticle[];
-}
-export interface StockItem {
-  ref: string;
-  designation: string;
-  depot: string;
-  quantite: number;
-}
-
+// Invoice Types
 export interface InvoiceItem {
   description: string;
   quantity: number;
@@ -58,7 +16,19 @@ export interface Invoice {
   status?: string;
 }
 
+export interface Vente {
+  id: string;
+  client: string;
+  date: string;
+  montant: number;
+  prixHT: number;
+  nombreItems: number;
+  unitPrice: number;
+}
+
+// Invoice Storage
 const INVOICES_KEY = 'invoices';
+const VENTES_KEY = 'ventes';
 
 export async function getInvoices(): Promise<Invoice[]> {
   const invoices = await localforage.getItem<Invoice[]>(INVOICES_KEY);
@@ -86,39 +56,12 @@ export async function clearInvoices(): Promise<void> {
   await localforage.removeItem(INVOICES_KEY);
 }
 
-// CLIENTS
-const CLIENTS_KEY = 'clients';
-export async function getClients() {
-  const clients = await localforage.getItem(CLIENTS_KEY);
-  return clients || [];
+// Vente Storage (for invoice integration)
+export async function getVentes(): Promise<Vente[]> {
+  const ventes = await localforage.getItem<Vente[]>(VENTES_KEY);
+  return ventes || [];
 }
-export async function setClients(clients: Client[]) {
-  await localforage.setItem(CLIENTS_KEY, clients);
-}
-// ARTICLES
-const ARTICLES_KEY = 'articles';
-export async function getArticles() {
-  const articles = await localforage.getItem(ARTICLES_KEY);
-  return articles || [];
-}
-export async function setArticles(articles: Article[]) {
-  await localforage.setItem(ARTICLES_KEY, articles);
-}
-// ACHATS
-const ACHATS_KEY = 'achats';
-export async function getAchats() {
-  const achats = await localforage.getItem(ACHATS_KEY);
-  return achats || [];
-}
-export async function setAchats(achats: Achat[]) {
-  await localforage.setItem(ACHATS_KEY, achats);
-}
-// STOCK
-const STOCK_KEY = 'stock';
-export async function getStock() {
-  const stock = await localforage.getItem(STOCK_KEY);
-  return stock || [];
-}
-export async function setStock(stock: StockItem[]) {
-  await localforage.setItem(STOCK_KEY, stock);
+
+export async function setVentes(ventes: Vente[]): Promise<void> {
+  await localforage.setItem(VENTES_KEY, ventes);
 } 
