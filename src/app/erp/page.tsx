@@ -11,9 +11,6 @@ import {
   exportClients, exportArticles, exportAchats, 
   exportStock, exportVentes 
 } from '@/utils/erpExport';
-import ERPNavbar from '@/components/erp/ERPNavbar';
-import ERPToolbar from '@/components/erp/ERPToolbar';
-import ERPTable from '@/components/erp/ERPTable';
 import { ERP_MENU_ITEMS, DEFAULT_CLIENT_FORM, DEFAULT_ARTICLE_FORM, DEFAULT_ACHAT_FORM } from '@/constants/erp';
 
 const TOOLBAR_BUTTONS = [
@@ -22,23 +19,6 @@ const TOOLBAR_BUTTONS = [
   { key: "delete", label: "Delete" },
   { key: "export", label: "Export" },
 ];
-
-const TABLE_DATA = {
-  tiers: [
-    { id: 1, name: "Client A", type: "Client", city: "Algiers" },
-    { id: 2, name: "Supplier B", type: "Supplier", city: "Oran" },
-  ],
-  articles: [
-    { ref: "012020500001", designation: "CHILLED BONELESS BEEF BRISKET", qte: 934.5, prixAchat: 716.5, prixVente: 999.99 },
-    { ref: "012020500007", designation: "FOREQUARTER CHILLED BONELESS BEEF", qte: 39149.83, prixAchat: 779.96, prixVente: 950.0 },
-  ],
-  achat: [
-    { id: 1, fournisseur: "Supplier B", date: "2024-06-01", montant: 100000 },
-  ],
-  stock: [
-    { id: 1, article: "BEEF BRISKET", qte: 500, depot: "Main" },
-  ],
-};
 
 const emptyClient: Omit<Client, "id"> = DEFAULT_CLIENT_FORM;
 
@@ -74,7 +54,6 @@ export default function AccueilERPTest() {
   const [showDeleteAchatIdx, setShowDeleteAchatIdx] = useState<number | null>(null);
   const [stock, setStockState] = useState<StockItem[]>([]);
   const [ventes, setVentesState] = useState<Vente[]>([]);
-  const [editVenteIdx, setEditVenteIdx] = useState<number | null>(null);
   const [showDeleteVenteIdx, setShowDeleteVenteIdx] = useState<number | null>(null);
   const router = useRouter();
 
@@ -328,10 +307,6 @@ export default function AccueilERPTest() {
   const saveVentes = async (newVentes: Vente[]) => {
     setVentesState(newVentes);
     await setVentes(newVentes);
-  };
-  const handleEditVente = (idx: number) => {
-    setEditVenteIdx(idx);
-    // Optionally open a modal for editing (not implemented here for brevity)
   };
   const handleDeleteVente = (idx: number) => {
     setShowDeleteVenteIdx(idx);
@@ -713,7 +688,6 @@ export default function AccueilERPTest() {
                         <td className="px-4 py-3 whitespace-nowrap flex gap-2">
                           <button
                             className="px-2 py-1 text-xs bg-[var(--warning)]/10 text-[var(--warning)] rounded hover:bg-[var(--warning)]/20 transition"
-                            onClick={() => handleEditVente(idx)}
                             disabled
                           >
                             Éditer

@@ -5,15 +5,12 @@ import type {
   ClientForm, ArticleForm, AchatForm, TableData 
 } from '@/types/erp';
 import { 
-  getClients, setClients, getArticles, setArticles, 
-  getAchats, setAchats, getStock, setStock, 
-  getVentes, setVentes 
+  getClients, getArticles, getAchats, getStock, getVentes 
 } from '@/utils/erpStorage';
 import { 
   exportClients, exportArticles, exportAchats, 
   exportStock, exportVentes 
 } from '@/utils/erpExport';
-import { deleteInvoice } from '@/utils/invoiceStorage';
 import { ERP_MENU_ITEMS, DEFAULT_CLIENT_FORM, DEFAULT_ARTICLE_FORM, DEFAULT_ACHAT_FORM } from '@/constants/erp';
 
 export function useERP() {
