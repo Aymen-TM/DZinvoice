@@ -46,11 +46,13 @@ export default function CreateInvoicePage() {
 
   // Auto-generate invoice number on component mount
   useEffect(() => {
-    const nextInvoiceNumber = generateNextInvoiceNumber();
-    setMeta(prev => ({
-      ...prev,
-      invoiceNumber: nextInvoiceNumber,
-    }));
+    (async () => {
+      const nextInvoiceNumber = await generateNextInvoiceNumber();
+      setMeta(prev => ({
+        ...prev,
+        invoiceNumber: nextInvoiceNumber,
+      }));
+    })();
   }, []);
 
   const [items, setItems] = useState<Item[]>([]);

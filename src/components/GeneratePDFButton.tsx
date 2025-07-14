@@ -5,6 +5,8 @@ import type { InvoiceData } from '@/types/invoice';
 import { generateInvoicePDF } from '@/utils/pdfGenerator';
 import PreviewPDFButton from './PreviewPDFButton';
 import { useRouter } from 'next/navigation';
+import { addInvoice } from '@/utils/invoiceStorage';
+import localforage from 'localforage';
 
 interface GeneratePDFButtonProps {
   invoiceData: InvoiceData;
@@ -35,7 +37,7 @@ export default function GeneratePDFButton({ invoiceData }: GeneratePDFButtonProp
         return;
       }
 
-      // Save invoice to localStorage
+      // Save invoice to localForage
       const invoiceToSave = {
         id: invoiceData.meta.invoiceNumber,
         clientName: invoiceData.client.clientName,
@@ -47,19 +49,9 @@ export default function GeneratePDFButton({ invoiceData }: GeneratePDFButtonProp
           price: item.unitPrice,
         })),
       };
-      const stored = localStorage.getItem('invoices');
-      const invoices: Record<string, unknown>[] = stored ? JSON.parse(stored) : [];
-      // Update if exists, else add
-      const idx = invoices.findIndex((inv) => (inv as { id?: string }).id === invoiceToSave.id);
-      if (idx !== -1) {
-        invoices[idx] = invoiceToSave;
-      } else {
-        invoices.push(invoiceToSave);
-      }
-      localStorage.setItem('invoices', JSON.stringify(invoices));
-
+      await addInvoice(invoiceToSave);
       // Set highlight flag for Mes Factures
-      localStorage.setItem('highlightInvoiceId', invoiceToSave.id);
+      await localforage.setItem('highlightInvoiceId', invoiceToSave.id);
       setShowSuccessModal(true);
 
       // Reset success state after 5 seconds

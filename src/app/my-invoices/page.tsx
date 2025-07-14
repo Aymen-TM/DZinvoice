@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import ReactDOM from "react-dom";
+import { getInvoices, addInvoice, deleteInvoice as deleteInvoiceAsync } from '@/utils/invoiceStorage';
 
 interface InvoiceItem {
   description: string;
@@ -54,12 +55,12 @@ export default function MyInvoicesPage() {
     setTimeout(() => setToast({ message: '', show: false }), 2500);
   };
 
-  // Load invoices from localStorage on mount
+  // Load invoices from localForage on mount
   useEffect(() => {
-    const stored = localStorage.getItem("invoices");
-    if (stored) {
-      setInvoices(JSON.parse(stored));
-    }
+    (async () => {
+      const stored = await getInvoices();
+      setInvoices(stored);
+    })();
   }, []);
 
   // On mount, check for highlight flag
@@ -117,7 +118,7 @@ export default function MyInvoicesPage() {
   }, [openMenu]);
 
   // Delete invoice by id
-  const handleDelete = (id: string | null) => {
+  const handleDelete = async (id: string | null) => {
     if (!id) return;
     setDeleteLoading(true);
     const exists = invoices.some(inv => inv.id === id);
@@ -129,7 +130,7 @@ export default function MyInvoicesPage() {
     }
     const updated = invoices.filter((inv) => inv.id !== id);
     setInvoices(updated);
-    localStorage.setItem("invoices", JSON.stringify(updated));
+    await deleteInvoiceAsync(id);
     setOpenMenu(null);
     setDeleteLoading(false);
     setConfirmDeleteId(null);
@@ -137,21 +138,23 @@ export default function MyInvoicesPage() {
   };
 
   // Dropdown actions
-  const handleMarkPaid = (id: string) => {
+  const handleMarkPaid = async (id: string) => {
     const updated = invoices.map(inv =>
       inv.id === id ? { ...inv, status: 'paid' } : inv
     );
     setInvoices(updated);
-    localStorage.setItem('invoices', JSON.stringify(updated));
+    const invoice = updated.find(inv => inv.id === id);
+    if (invoice) await addInvoice(invoice);
     setOpenMenu(null);
     showToast("Facture marquée comme payée");
   };
-  const handleMarkUnpaid = (id: string) => {
+  const handleMarkUnpaid = async (id: string) => {
     const updated = invoices.map(inv =>
       inv.id === id ? { ...inv, status: undefined } : inv
     );
     setInvoices(updated);
-    localStorage.setItem('invoices', JSON.stringify(updated));
+    const invoice = updated.find(inv => inv.id === id);
+    if (invoice) await addInvoice(invoice);
     setOpenMenu(null);
     showToast("Facture marquée comme non payée");
   };
