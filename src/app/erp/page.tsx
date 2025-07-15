@@ -67,6 +67,15 @@ export default function AccueilERPTest() {
   const achatArticleDesInputRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [depots, setDepots] = useState<string[]>([]);
 
+  // Sorting and filtering state
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  // Change filters state to support multi-select
+  const [filters, setFilters] = useState<{ [key: string]: string[] }>({});
+  const [filterDropdownOpen, setFilterDropdownOpen] = useState<string | null>(null);
+  const [filterSearch, setFilterSearch] = useState<{ [key: string]: string }>({});
+  const [pendingFilters, setPendingFilters] = useState<{ [key: string]: string[] }>({});
+
   // Sync arrays with achatForm.articles length
   useEffect(() => {
     setAchatArticleRefSearch((prev) => achatForm.articles.map((art, idx) => prev[idx] ?? art.ref ?? ""));
@@ -222,6 +231,15 @@ export default function AccueilERPTest() {
       setClientForm(rest);
       setEditClientId(id);
       setShowClientForm(true);
+    }
+  };
+
+  // Add handler for deleting client
+  const handleDeleteClient = async (idx: number) => {
+    if (window.confirm("Voulez-vous vraiment supprimer ce client ?")) {
+      const updated = clients.filter((_, i) => i !== idx);
+      setClientsState(updated);
+      await setClients(updated);
     }
   };
 
@@ -422,6 +440,44 @@ export default function AccueilERPTest() {
     setShowDeleteStockIdx(null);
   };
 
+  // Sorting and filtering logic
+  function applyFiltersAndSorting(columns: string[], rows: any[][]) {
+    // Filtering
+    let filteredRows = rows.filter(row =>
+      columns.every((col, i) => {
+        const filterVals = filters[col];
+        if (!filterVals || filterVals.length === 0) return true;
+        return filterVals.includes(String(row[i]));
+      })
+    );
+    // Sorting
+    if (sortColumn) {
+      const colIdx = columns.indexOf(sortColumn);
+      if (colIdx !== -1) {
+        filteredRows = [...filteredRows].sort((a, b) => {
+          const aVal = a[colIdx];
+          const bVal = b[colIdx];
+          if (aVal === bVal) return 0;
+          if (sortDirection === 'asc') {
+            return aVal > bVal ? 1 : -1;
+          } else {
+            return aVal < bVal ? 1 : -1;
+          }
+        });
+      }
+    }
+    return filteredRows;
+  }
+
+  // Helper to get unique values for a column, filtered by search
+  function getUniqueColumnValues(col: string, rows: any[][], colIdx: number, search: string) {
+    let values = Array.from(new Set(rows.map(row => row[colIdx])));
+    if (search) {
+      values = values.filter(v => String(v).toLowerCase().includes(search.toLowerCase()));
+    }
+    return values;
+  }
+
   // Table columns and data per section
   const getTable = () => {
     switch (activeMenu) {
@@ -464,6 +520,47 @@ export default function AccueilERPTest() {
   };
 
   const { columns, rows } = getTable();
+  const filteredSortedRows = applyFiltersAndSorting(columns, rows);
+
+  // Add to toolbarButtons for all menus
+  const exportAllData = async () => {
+    // Gather all data
+    const clients = await getClients();
+    const articles = await getArticles();
+    const achats = await getAchats();
+    const stock = await getStock();
+    const ventes = await getVentes();
+    // You may want to add invoices if stored separately
+    const data = { clients, articles, achats, stock, ventes };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'erp_database_export.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  const importAllData = async (file: File) => {
+    if (!window.confirm('Importer ce fichier va écraser toutes les données existantes. Continuer ?')) return;
+    const text = await file.text();
+    try {
+      const data = JSON.parse(text);
+      if (data.clients) await setClients(data.clients);
+      if (data.articles) await setArticles(data.articles);
+      if (data.achats) await setAchats(data.achats);
+      if (data.stock) await setStock(data.stock);
+      if (data.ventes) await setVentes(data.ventes);
+      alert('Importation réussie !');
+      // Optionally refresh state
+      setClientsState(await getClients());
+      setArticlesState(await getArticles());
+      setAchatsState(await getAchats());
+      setStockState(await getStock());
+      setVentesState(await getVentes());
+    } catch (e) {
+      alert('Erreur lors de l\'importation du fichier.');
+    }
+  };
 
   // Toolbar buttons: show 'Nouveau' as active for Tiers, Articles, and Achat
   const toolbarButtons: ToolbarButton[] = activeMenu === "tiers"
@@ -501,31 +598,51 @@ export default function AccueilERPTest() {
     <div className="min-h-screen bg-[var(--background)] flex flex-col pt-16 font-sans">
       {/* Top Menu Bar */}
       <nav className="w-full bg-[var(--card)] shadow z-30 flex flex-col sm:flex-row items-center h-auto sm:h-16 px-3 sm:px-8 border-b border-[var(--border)] sticky top-0">
-        <div className="flex flex-wrap gap-1 sm:gap-6 w-full justify-center sm:justify-start py-3 sm:py-0">
-          {ERP_MENU_ITEMS.map((item) => (
-            <button
-              key={item.key}
-              className={`px-3 sm:px-4 py-2.5 sm:py-2 font-semibold text-xs sm:text-sm rounded-xl transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 ${activeMenu === item.key ? "bg-[var(--primary)] text-white shadow" : "text-[var(--primary-dark)] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)]"}`}
-              onClick={() => setActiveMenu(item.key)}
-            >
-              {item.label}
-            </button>
-          ))}
+        <div className="flex flex-wrap gap-1 sm:gap-6 w-full justify-between items-center py-3 sm:py-0">
+          <div className="flex flex-wrap gap-1 sm:gap-6">
+            {ERP_MENU_ITEMS.map((item) => (
+              <button
+                key={item.key}
+                className={`px-3 sm:px-4 py-2.5 sm:py-2 font-semibold text-xs sm:text-sm rounded-xl transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 ${activeMenu === item.key ? "bg-[var(--primary)] text-white shadow" : "text-[var(--primary-dark)] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)]"}`}
+                onClick={() => setActiveMenu(item.key)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          {["tiers", "articles", "achat", "stock", "ventes"].includes(activeMenu) && (
+            <div className="flex gap-2 ml-auto">
+              <button
+                className="px-4 py-2 bg-[var(--primary)]/10 border border-[var(--border)] rounded-xl text-[var(--primary-dark)] font-medium text-xs sm:text-sm hover:bg-[var(--primary)]/20 hover:text-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 transition-colors"
+                onClick={exportAllData}
+              >
+                Exporter la base
+              </button>
+              <button
+                className="px-4 py-2 bg-[var(--primary)]/10 border border-[var(--border)] rounded-xl text-[var(--primary-dark)] font-medium text-xs sm:text-sm hover:bg-[var(--primary)]/20 hover:text-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 transition-colors"
+                onClick={() => document.getElementById('erp-import-file')?.click()}
+              >
+                Importer la base
+              </button>
+            </div>
+          )}
         </div>
       </nav>
 
       {/* Toolbar */}
       <div className="bg-[var(--card)] border-b border-[var(--border)] shadow-sm flex flex-col sm:flex-row items-center px-3 sm:px-8 h-auto sm:h-14 z-30 sticky top-16">
-        <div className="flex flex-wrap gap-2 w-full justify-center sm:justify-start py-3 sm:py-0">
-          {toolbarButtons.map((btn) => (
-            <button
-              key={btn.key}
-              className="px-3 sm:px-4 py-2.5 sm:py-2 bg-[var(--primary)]/5 border border-[var(--border)] rounded-xl text-[var(--primary-dark)] font-medium text-xs sm:text-sm hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 transition-colors"
-              {...(typeof btn.onClick === 'function' ? { onClick: btn.onClick } : {})}
-            >
-              {btn.label}
-            </button>
-          ))}
+        <div className="flex flex-wrap gap-2 w-full items-center justify-between py-3 sm:py-0">
+          <div className="flex flex-wrap gap-2">
+            {toolbarButtons.map((btn) => (
+              <button
+                key={btn.key}
+                className="px-3 sm:px-4 py-2.5 sm:py-2 bg-[var(--primary)]/5 border border-[var(--border)] rounded-xl text-[var(--primary-dark)] font-medium text-xs sm:text-sm hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 transition-colors"
+                {...(typeof btn.onClick === 'function' ? { onClick: btn.onClick } : {})}
+              >
+                {btn.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -760,29 +877,119 @@ export default function AccueilERPTest() {
             </div>
           )}
           {/* --- TABLE --- */}
-          <div className="overflow-x-auto w-full mt-4 rounded-xl border border-[var(--border)]">
-            <div className="min-w-full">
-              <table className="w-full divide-y divide-[var(--border)] text-sm">
-                <thead className="bg-[var(--primary)]/5">
+          {/* Responsive table wrapper */}
+          <div className="overflow-x-auto sm:overflow-x-visible w-full mt-4 rounded-2xl border-2 border-[var(--primary)]/30 shadow-xl">
+            <div className="min-w-full overflow-visible">
+              <table className="w-full text-xs sm:text-sm rounded-2xl overflow-visible border-separate border-spacing-0">
+                <thead className="bg-gradient-to-r from-[var(--primary)]/20 to-[var(--primary)]/10 border-b-2 border-[var(--primary)]/30">
                   <tr>
-                    {columns.map((col) => (
-                      <th key={col} className="px-3 sm:px-4 py-3 text-left font-semibold text-[var(--primary-dark)] whitespace-nowrap text-xs sm:text-sm tracking-wide">{col}</th>
-                    ))}
+                    {columns.map((col, colIdx) => {
+                      const isFiltered = filters[col] && filters[col].length > 0;
+                      return (
+                        <th
+                          key={col}
+                          className="px-2 sm:px-4 py-3 sm:py-4 text-left font-bold text-[var(--primary-dark)] uppercase tracking-wider bg-[var(--primary)]/10 border-b-2 border-[var(--primary)]/30 first:rounded-tl-2xl last:rounded-tr-2xl text-xs sm:text-sm cursor-pointer select-none relative"
+                          onClick={() => {
+                            if (sortColumn === col) {
+                              setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                            } else {
+                              setSortColumn(col);
+                              setSortDirection('asc');
+                            }
+                          }}
+                        >
+                          <span>{col}</span>
+                          <button
+                            type="button"
+                            className={`ml-2 inline-flex items-center justify-center w-5 h-5 rounded hover:bg-[var(--primary)]/20 transition filter-dropdown ${isFiltered ? 'text-[var(--primary)]' : 'text-gray-400'}`}
+                            onClick={e => { e.stopPropagation(); setFilterDropdownOpen(filterDropdownOpen === col ? null : col); setPendingFilters(filters); }}
+                            title="Filtrer"
+                          >
+                            {/* Use Heroicons FunnelIcon or inline SVG */}
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707l-6.414 6.414A2 2 0 0013 14.586V19a1 1 0 01-1.447.894l-2-1A1 1 0 019 18v-3.414a2 2 0 00-.586-1.414L2 6.707A1 1 0 012 6V4z" />
+                            </svg>
+                          </button>
+                          {filterDropdownOpen === col && (
+                            <div className="absolute z-50 right-0 sm:w-56 w-[90vw] min-w-[10rem] bg-white border border-[var(--primary)]/20 rounded-lg shadow-lg p-2 filter-dropdown">
+                              <div className="mb-2">
+                                <input
+                                  type="text"
+                                  value={filterSearch[col] || ''}
+                                  onChange={e => setFilterSearch(s => ({ ...s, [col]: e.target.value }))}
+                                  placeholder="Rechercher..."
+                                  className="w-full px-2 py-1 border border-[var(--primary)]/20 rounded text-xs bg-white/70 focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition"
+                                />
+                              </div>
+                              <div className="max-h-40 overflow-y-auto mb-2">
+                                <label className="flex items-center px-2 py-1 cursor-pointer text-xs">
+                                  <input
+                                    type="checkbox"
+                                    checked={pendingFilters[col]?.length === getUniqueColumnValues(col, filteredSortedRows, colIdx, filterSearch[col] || '').length}
+                                    onChange={e => {
+                                      if (e.target.checked) {
+                                        setPendingFilters(f => ({ ...f, [col]: getUniqueColumnValues(col, filteredSortedRows, colIdx, filterSearch[col] || '') }));
+                                      } else {
+                                        setPendingFilters(f => ({ ...f, [col]: [] }));
+                                      }
+                                    }}
+                                  />
+                                  <span className="ml-2">(Tout sélectionner)</span>
+                                </label>
+                                {getUniqueColumnValues(col, filteredSortedRows, colIdx, filterSearch[col] || '').map((val: any) => (
+                                  <label key={val} className="flex items-center px-2 py-1 cursor-pointer text-xs">
+                                    <input
+                                      type="checkbox"
+                                      checked={pendingFilters[col]?.includes(val)}
+                                      onChange={e => {
+                                        setPendingFilters(f => {
+                                          const prev = f[col] || [];
+                                          if (e.target.checked) {
+                                            return { ...f, [col]: [...prev, val] };
+                                          } else {
+                                            return { ...f, [col]: prev.filter(v => v !== val) };
+                                          }
+                                        });
+                                      }}
+                                    />
+                                    <span className="ml-2">{val}</span>
+                                  </label>
+                                ))}
+                              </div>
+                              <div className="flex justify-between gap-2 mt-2">
+                                <button
+                                  className="flex-1 px-2 py-1 rounded bg-[var(--primary)]/10 text-[var(--primary)] text-xs font-semibold hover:bg-[var(--primary)]/20"
+                                  onClick={() => { setFilters(pendingFilters); setFilterDropdownOpen(null); }}
+                                >OK</button>
+                                <button
+                                  className="flex-1 px-2 py-1 rounded bg-gray-100 text-gray-600 text-xs font-semibold hover:bg-gray-200"
+                                  onClick={() => { setPendingFilters(f => ({ ...f, [col]: [] })); setFilters(f => ({ ...f, [col]: [] })); setFilterDropdownOpen(null); }}
+                                >Effacer</button>
+                              </div>
+                            </div>
+                          )}
+                        </th>
+                      );
+                    })}
                     {(activeMenu === "tiers" || activeMenu === "articles" || activeMenu === "achat" || activeMenu === "stock" || activeMenu === "ventes") && (
-                      <th className="px-3 sm:px-4 py-3 text-left font-semibold text-[var(--primary-dark)] whitespace-nowrap text-xs sm:text-sm tracking-wide">Action</th>
+                      <th className="px-4 py-4 text-left font-bold text-[var(--primary-dark)] uppercase tracking-wider bg-[var(--primary)]/10 border-b-2 border-[var(--primary)]/30 last:rounded-tr-2xl text-xs sm:text-sm">Action</th>
                     )}
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.length === 0 ? (
+                  {filteredSortedRows.length === 0 ? (
                     <tr>
-                      <td colSpan={columns.length + ((activeMenu === "tiers" || activeMenu === "articles" || activeMenu === "achat") ? 1 : (activeMenu === "stock" ? 1 : 0))} className="text-center text-[var(--muted)] py-8 text-sm">Aucune donnée</td>
+                      <td colSpan={columns.length + ((activeMenu === "tiers" || activeMenu === "articles" || activeMenu === "achat" || activeMenu === "stock" || activeMenu === "ventes") ? 1 : 0)} className="text-center text-[var(--muted)] py-8 text-sm">Aucune donnée</td>
                     </tr>
                   ) : (
-                    rows.map((row, idx) => (
-                      <tr key={idx} className={idx % 2 === 0 ? "bg-[var(--card)]" : "bg-[var(--table-row-alt)] hover:bg-[var(--primary)]/10 transition-colors"}>
+                    filteredSortedRows.map((row, idx) => (
+                      <tr key={idx} className={
+                        `transition-colors duration-200 ${idx % 2 === 0 ? "bg-white/90" : "bg-[var(--table-row-alt)]/80"} hover:bg-[var(--primary)]/10 border-b border-[var(--primary)]/10`
+                      }>
                         {row.map((cell, i) => (
-                          <td key={i} className="px-3 sm:px-4 py-3 whitespace-nowrap text-xs sm:text-sm">{cell}</td>
+                          <td key={i} className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm border-b border-[var(--primary)]/10 first:rounded-bl-2xl last:rounded-br-2xl">
+                            {cell}
+                          </td>
                         ))}
                         {activeMenu === "tiers" && (
                           <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
@@ -792,6 +999,12 @@ export default function AccueilERPTest() {
                                 onClick={() => handleEditClient(clients[idx].id)}
                               >
                                 Éditer
+                              </button>
+                              <button
+                                className="px-2 py-1.5 sm:py-1 text-xs bg-[var(--danger)]/10 text-[var(--danger)] rounded hover:bg-[var(--danger)]/20 transition"
+                                onClick={() => handleDeleteClient(idx)}
+                              >
+                                Supprimer
                               </button>
                             </div>
                           </td>
@@ -892,6 +1105,18 @@ export default function AccueilERPTest() {
           </div>
         </div>
       )}
+      {/* Add hidden file input for import */}
+      <input
+        id="erp-import-file"
+        type="file"
+        accept="application/json"
+        style={{ display: 'none' }}
+        onChange={e => {
+          const file = e.target.files?.[0];
+          if (file) importAllData(file);
+          e.target.value = '';
+        }}
+      />
     </div>
   );
 } 
