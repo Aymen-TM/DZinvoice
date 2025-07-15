@@ -40,6 +40,7 @@ export interface Item {
   unitPrice: number;
   amount: number;
   tva: number;
+  depot: string;
 }
 
 export interface Totals {

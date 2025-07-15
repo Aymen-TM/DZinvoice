@@ -28,6 +28,7 @@ export interface AchatArticle {
   designation: string;
   quantite: number;
   depot: string;
+  prixAchat: number;
 }
 
 export interface Achat {

@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { Item, Totals } from '@/types/invoice';
+import type { Article as ERPArticle } from '@/types/erp';
 import { numberToFrenchWords } from '@/utils/numberToWords';
+import { getArticles, getStock } from '@/utils/erpStorage';
 
 interface ItemsListProps {
   items: Item[];
@@ -15,6 +17,11 @@ interface ItemsListProps {
 export default function ItemsList({ items, onItemsChange, totals, onTotalsChange }: ItemsListProps) {
   const [remise, setRemise] = useState(0);
   const [isAddingItem, setIsAddingItem] = useState(false);
+  const [erpArticles, setErpArticles] = useState<ERPArticle[]>([]);
+  const [showArticleDropdown, setShowArticleDropdown] = useState<string | null>(null);
+  const [filteredArticles, setFilteredArticles] = useState<ERPArticle[]>([]);
+  const [dropdownField, setDropdownField] = useState<'reference' | 'designation' | null>(null);
+  const [depots, setDepots] = useState<string[]>([]);
 
   const addItem = () => {
     setIsAddingItem(true);
@@ -26,6 +33,7 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
       unitPrice: 0,
       amount: 0,
       tva: 19,
+      depot: '', // Add depot field
     };
     onItemsChange([...items, newItem]);
     
@@ -37,6 +45,88 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
     onItemsChange(items.filter(item => item.id !== id));
   };
 
+  // Load ERP articles and depots on component mount
+  useEffect(() => {
+    const loadArticlesAndDepots = async () => {
+      try {
+        const articles = await getArticles();
+        setErpArticles(articles);
+        const stock = await getStock();
+        const uniqueDepots = Array.from(new Set(stock.map(s => s.depot).filter(Boolean)));
+        setDepots(uniqueDepots);
+      } catch (error) {
+        console.error('Error loading articles or depots:', error);
+      }
+    };
+    loadArticlesAndDepots();
+  }, []);
+
+  // Handle article selection
+  const handleArticleSelect = (itemId: string, selectedArticle: ERPArticle) => {
+    const updatedItems = items.map(item => {
+      if (item.id === itemId) {
+        // Find all depots for this article
+        const matchingDepots = depots.filter(d => d && d.length > 0);
+        return {
+          ...item,
+          reference: selectedArticle.ref, // Restore this line
+          designation: selectedArticle.designation,
+          unitPrice: selectedArticle.prixVente,
+          amount: item.quantity * selectedArticle.prixVente,
+          depot: matchingDepots.length === 1 ? matchingDepots[0] : '',
+        };
+      }
+      return item;
+    });
+    onItemsChange(updatedItems);
+    setShowArticleDropdown(null);
+    setDropdownField(null);
+  };
+
+  // Show article dropdown
+  const showArticleDropdownForField = (itemId: string, field: 'reference' | 'designation') => {
+    setFilteredArticles(erpArticles);
+    setShowArticleDropdown(itemId);
+    setDropdownField(field);
+  };
+
+  // Filter articles based on input
+  const filterArticles = (itemId: string, searchTerm: string, field: 'reference' | 'designation') => {
+    if (!searchTerm.trim()) {
+      setFilteredArticles(erpArticles);
+      return;
+    }
+
+    let filtered: ERPArticle[] = [];
+    if (field === 'reference') {
+      filtered = erpArticles.filter(article =>
+        article.ref.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    } else {
+      filtered = erpArticles.filter(article =>
+        article.ref.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        article.designation.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    setFilteredArticles(filtered);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.article-dropdown-container')) {
+        setShowArticleDropdown(null);
+        setDropdownField(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const updateItem = (id: string, field: keyof Item, value: string | number) => {
     const updatedItems = items.map(item => {
       if (item.id === id) {
@@ -45,6 +135,11 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
         // Recalculate amount if quantity or unitPrice changes
         if (field === 'quantity' || field === 'unitPrice') {
           updatedItem.amount = updatedItem.quantity * updatedItem.unitPrice;
+        }
+        
+        // Filter articles if dropdown is open
+        if (showArticleDropdown === id && (field === 'reference' || field === 'designation')) {
+          filterArticles(id, value as string, field as 'reference' | 'designation');
         }
         
         return updatedItem;
@@ -154,13 +249,42 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
                         </svg>
                         <span>Référence</span>
                       </label>
-                      <input
-                        type="text"
-                        value={item.reference}
-                        onChange={(e) => updateItem(item.id, 'reference', e.target.value)}
-                        className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white placeholder-gray-400 placeholder-opacity-100"
-                        placeholder="Référence"
-                      />
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={item.reference}
+                          onChange={(e) => updateItem(item.id, 'reference', e.target.value)}
+                          className="w-full px-3 py-3 pr-10 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white placeholder-gray-400 placeholder-opacity-100"
+                          placeholder="Référence"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => showArticleDropdownForField(item.id, 'reference')}
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-orange-500 transition-colors duration-200"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                        </button>
+                      </div>
+                      
+                      {/* Article Dropdown for Reference */}
+                      {showArticleDropdown === item.id && dropdownField === 'reference' && filteredArticles.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 w-full sm:left-0 sm:w-full sm:max-w-xs sm:max-w-md z-50 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-56 overflow-y-auto overflow-x-auto whitespace-nowrap px-2 py-1">
+                          {filteredArticles.map((article) => (
+                            <button
+                              key={article.ref}
+                              onClick={() => handleArticleSelect(item.id, article)}
+                              className="w-full px-4 py-3 sm:px-3 sm:py-2 text-left text-sm sm:text-base hover:bg-orange-50 focus:bg-orange-50 focus:outline-none transition-colors duration-200 border-b border-gray-100 last:border-b-0"
+                            >
+                              <div className="flex flex-col">
+                                <span className="text-sm font-medium text-gray-900 truncate block">{article.ref}</span>
+                                <span className="text-xs text-gray-500 truncate block">{article.designation}</span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs font-semibold text-gray-600 flex items-center space-x-1">
@@ -181,20 +305,69 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
                   </div>
                   
                   {/* Designation */}
-                  <div className="space-y-1">
+                  <div className="space-y-1 relative article-dropdown-container">
                     <label className="text-xs font-semibold text-gray-600 flex items-center space-x-1">
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                       <span>Désignation</span>
                     </label>
-                    <input
-                      type="text"
-                      value={item.designation}
-                      onChange={(e) => updateItem(item.id, 'designation', e.target.value)}
-                      className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white placeholder-gray-400 placeholder-opacity-100"
-                      placeholder="Désignation"
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={item.designation}
+                        onChange={(e) => updateItem(item.id, 'designation', e.target.value)}
+                        className="w-full px-3 py-3 pr-10 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white placeholder-gray-400 placeholder-opacity-100"
+                        placeholder="Désignation"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => showArticleDropdownForField(item.id, 'designation')}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-orange-500 transition-colors duration-200"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      </button>
+                    </div>
+                    
+                    {/* Article Dropdown */}
+                    {showArticleDropdown === item.id && dropdownField === 'designation' && filteredArticles.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 min-w-full max-w-xs sm:max-w-md z-50 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-56 overflow-y-auto overflow-x-auto whitespace-nowrap">
+                        {filteredArticles.map((article) => (
+                          <button
+                            key={article.ref}
+                            onClick={() => handleArticleSelect(item.id, article)}
+                            className="w-full px-4 py-3 sm:px-3 sm:py-2 text-left text-sm sm:text-base hover:bg-orange-50 focus:bg-orange-50 focus:outline-none transition-colors duration-200 border-b border-gray-100 last:border-b-0"
+                          >
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium text-gray-900 truncate block">{article.designation}</span>
+                              <span className="text-xs text-gray-500 truncate block">Ref: {article.ref} - Prix: {article.prixVente} DA</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Depot */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-gray-600 flex items-center space-x-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                      </svg>
+                      <span>Dépôt</span>
+                    </label>
+                    <select
+                      value={item.depot || ''}
+                      onChange={e => updateItem(item.id, 'depot', e.target.value)}
+                      className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white"
+                    >
+                      <option value="">Sélectionner un dépôt</option>
+                      {depots.map(d => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
                   </div>
                   
                   {/* Price, Amount, and TVA Row */}
@@ -258,24 +431,80 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
 
                 {/* Desktop: Grid layout */}
                 <div className="hidden sm:grid sm:grid-cols-12 gap-4 items-center">
-                  <div className="col-span-2 group/item">
-                    <input
-                      type="text"
-                      value={item.reference}
-                      onChange={(e) => updateItem(item.id, 'reference', e.target.value)}
-                      className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white group-hover/item:border-orange-300 placeholder-gray-400 placeholder-opacity-100"
-                      placeholder="Référence"
-                    />
+                  <div className="col-span-2 group/item article-dropdown-container">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={item.reference}
+                        onChange={(e) => updateItem(item.id, 'reference', e.target.value)}
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 pr-8 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white group-hover/item:border-orange-300 placeholder-gray-400 placeholder-opacity-100"
+                        placeholder="Référence"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => showArticleDropdownForField(item.id, 'reference')}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-orange-500 transition-colors duration-200"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      </button>
+                      {showArticleDropdown === item.id && dropdownField === 'reference' && filteredArticles.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 w-full sm:left-0 sm:w-full sm:max-w-xs sm:max-w-md z-50 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-56 overflow-y-auto overflow-x-auto whitespace-nowrap px-2 py-1">
+                          {filteredArticles.map((article) => (
+                            <button
+                              key={article.ref}
+                              onClick={() => handleArticleSelect(item.id, article)}
+                              className="w-full px-4 py-3 sm:px-3 sm:py-2 text-left text-sm sm:text-base hover:bg-orange-50 focus:bg-orange-50 focus:outline-none transition-colors duration-200 border-b border-gray-100 last:border-b-0"
+                            >
+                              <div className="flex flex-col">
+                                <span className="text-sm font-medium text-gray-900 truncate block">{article.ref}</span>
+                                <span className="text-xs text-gray-500 truncate block">{article.designation}</span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   
-                  <div className="col-span-4 group/item">
-                    <input
-                      type="text"
-                      value={item.designation}
-                      onChange={(e) => updateItem(item.id, 'designation', e.target.value)}
-                      className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white group-hover/item:border-orange-300 placeholder-gray-400 placeholder-opacity-100"
-                      placeholder="Désignation"
-                    />
+                  <div className="col-span-4 group/item relative article-dropdown-container">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={item.designation}
+                        onChange={(e) => updateItem(item.id, 'designation', e.target.value)}
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 pr-8 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white group-hover/item:border-orange-300 placeholder-gray-400 placeholder-opacity-100"
+                        placeholder="Désignation"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => showArticleDropdownForField(item.id, 'designation')}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-orange-500 transition-colors duration-200"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      </button>
+                    </div>
+                    
+                    {/* Article Dropdown for Designation */}
+                    {showArticleDropdown === item.id && dropdownField === 'designation' && filteredArticles.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 min-w-full max-w-xs sm:max-w-md z-50 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-56 overflow-y-auto overflow-x-auto whitespace-nowrap">
+                        {filteredArticles.map((article) => (
+                          <button
+                            key={article.ref}
+                            onClick={() => handleArticleSelect(item.id, article)}
+                            className="w-full px-4 py-3 sm:px-3 sm:py-2 text-left text-sm sm:text-base hover:bg-orange-50 focus:bg-orange-50 focus:outline-none transition-colors duration-200 border-b border-gray-100 last:border-b-0"
+                          >
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium text-gray-900 truncate block">{article.designation}</span>
+                              <span className="text-xs text-gray-500 truncate block">Ref: {article.ref} - Prix: {article.prixVente} DA</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   
                   <div className="col-span-1 group/item">
@@ -287,6 +516,19 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
                       onChange={(e) => updateItem(item.id, 'quantity', parseFloat(e.target.value) || 0)}
                       className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white group-hover/item:border-orange-300"
                     />
+                  </div>
+                  
+                  <div className="col-span-2 group/item">
+                    <select
+                      value={item.depot || ''}
+                      onChange={e => updateItem(item.id, 'depot', e.target.value)}
+                      className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white group-hover/item:border-orange-300"
+                    >
+                      <option value="">Sélectionner un dépôt</option>
+                      {depots.map(d => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
                   </div>
                   
                   <div className="col-span-2 group/item">

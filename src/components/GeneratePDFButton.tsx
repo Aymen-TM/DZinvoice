@@ -6,6 +6,7 @@ import { generateInvoicePDF } from '@/utils/pdfGenerator';
 import PreviewPDFButton from './PreviewPDFButton';
 import { useRouter } from 'next/navigation';
 import { addInvoice, getVentes, setVentes, addCompleteInvoice } from '@/utils/invoiceStorage';
+import { getStock, setStock } from '@/utils/erpStorage';
 import localforage from 'localforage';
 
 interface GeneratePDFButtonProps {
@@ -92,8 +93,25 @@ export default function GeneratePDFButton({ invoiceData, isEditing = false }: Ge
       await setVentes(ventes);
       // Set highlight flag for Mes Factures
       await localforage.setItem('highlightInvoiceId', invoiceToSave.id);
-      setShowSuccessModal(true);
 
+      // --- Update stock after sale ---
+      const stock = await getStock();
+      const updatedStock = [...stock];
+      invoiceData.items.forEach(item => {
+        // Find by reference AND depot
+        const idx = updatedStock.findIndex(s => s.ref === item.reference && s.depot === item.depot);
+        if (idx !== -1) {
+          updatedStock[idx] = {
+            ...updatedStock[idx],
+            quantite: Math.max(0, updatedStock[idx].quantite - item.quantity),
+          };
+        }
+        // If not found, do nothing (can't sell what you don't have)
+      });
+      await setStock(updatedStock);
+      // --- End update stock ---
+
+      setShowSuccessModal(true);
       // Reset success state after 5 seconds
       setTimeout(() => setIsSuccess(false), 5000);
     } catch (error) {

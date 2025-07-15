@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from 'next/navigation';
 import type { Client, Article, Achat, AchatArticle, StockItem, Vente } from '@/types/erp';
 import { 
@@ -30,6 +30,7 @@ const emptyAchatArticle: AchatArticle = {
   designation: '',
   quantite: 1,
   depot: '',
+  prixAchat: 0,
 };
 
 type ToolbarButton = { key: string; label: string; onClick?: () => void };
@@ -52,7 +53,108 @@ export default function AccueilERPTest() {
   const [stock, setStockState] = useState<StockItem[]>([]);
   const [ventes, setVentesState] = useState<Vente[]>([]);
   const [showDeleteVenteIdx, setShowDeleteVenteIdx] = useState<number | null>(null);
+  const [showDeleteStockIdx, setShowDeleteStockIdx] = useState<number | null>(null);
   const router = useRouter();
+
+  // Add at the top level of AccueilERPTest, after other useState hooks
+  const [achatArticleRefSearch, setAchatArticleRefSearch] = useState<string[]>([]);
+  const [achatArticleRefDropdown, setAchatArticleRefDropdown] = useState<boolean[]>([]);
+  const [achatArticleRefFiltered, setAchatArticleRefFiltered] = useState<Article[][]>([]);
+  const [achatArticleDesSearch, setAchatArticleDesSearch] = useState<string[]>([]);
+  const [achatArticleDesDropdown, setAchatArticleDesDropdown] = useState<boolean[]>([]);
+  const [achatArticleDesFiltered, setAchatArticleDesFiltered] = useState<Article[][]>([]);
+  const achatArticleRefInputRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const achatArticleDesInputRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [depots, setDepots] = useState<string[]>([]);
+
+  // Sync arrays with achatForm.articles length
+  useEffect(() => {
+    setAchatArticleRefSearch((prev) => achatForm.articles.map((art, idx) => prev[idx] ?? art.ref ?? ""));
+    setAchatArticleRefDropdown((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? false));
+    setAchatArticleRefFiltered((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? articles));
+    setAchatArticleDesSearch((prev) => achatForm.articles.map((art, idx) => prev[idx] ?? art.designation ?? ""));
+    setAchatArticleDesDropdown((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? false));
+    setAchatArticleDesFiltered((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? articles));
+    achatArticleRefInputRefs.current = achatForm.articles.map((_, idx) => achatArticleRefInputRefs.current[idx] ?? null);
+    achatArticleDesInputRefs.current = achatForm.articles.map((_, idx) => achatArticleDesInputRefs.current[idx] ?? null);
+  }, [achatForm.articles.length, articles]);
+
+  // Load depots from stock on mount
+  useEffect(() => {
+    (async () => {
+      const s = await getStock();
+      const uniqueDepots = Array.from(new Set(s.map(item => item.depot).filter(Boolean)));
+      setDepots(uniqueDepots);
+    })();
+  }, []);
+
+  // Handlers for reference field
+  const handleAchatArticleRefSearchChange = (idx: number, value: string) => {
+    setAchatArticleRefSearch((prev) => prev.map((v, i) => (i === idx ? value : v)));
+    setAchatArticleRefDropdown((prev) => prev.map((v, i) => (i === idx ? true : v)));
+    setAchatArticleRefFiltered((prev) =>
+      prev.map((arr, i) =>
+        i === idx
+          ? articles.filter((a) => a.ref.toLowerCase().includes(value.toLowerCase()))
+          : arr
+      )
+    );
+  };
+  const handleAchatArticleRefSelect = (idx: number, a: Article) => {
+    handleAchatArticleChange(idx, 'ref', a.ref);
+    handleAchatArticleChange(idx, 'designation', a.designation);
+    handleAchatArticleChange(idx, 'prixAchat', a.prixAchat || 0);
+    setAchatArticleRefSearch((prev) => prev.map((v, i) => (i === idx ? a.ref : v)));
+    setAchatArticleDesSearch((prev) => prev.map((v, i) => (i === idx ? a.designation : v)));
+    setAchatArticleRefDropdown((prev) => prev.map((v, i) => (i === idx ? false : v)));
+    setAchatArticleDesDropdown((prev) => prev.map((v, i) => (i === idx ? false : v)));
+  };
+  const handleAchatArticleRefInputFocus = (idx: number) => {
+    setAchatArticleRefDropdown((prev) => prev.map((v, i) => (i === idx ? true : v)));
+  };
+
+  // Handlers for designation field
+  const handleAchatArticleDesSearchChange = (idx: number, value: string) => {
+    setAchatArticleDesSearch((prev) => prev.map((v, i) => (i === idx ? value : v)));
+    setAchatArticleDesDropdown((prev) => prev.map((v, i) => (i === idx ? true : v)));
+    setAchatArticleDesFiltered((prev) =>
+      prev.map((arr, i) =>
+        i === idx
+          ? articles.filter((a) => a.designation.toLowerCase().includes(value.toLowerCase()))
+          : arr
+      )
+    );
+  };
+  const handleAchatArticleDesSelect = (idx: number, a: Article) => {
+    handleAchatArticleChange(idx, 'ref', a.ref);
+    handleAchatArticleChange(idx, 'designation', a.designation);
+    handleAchatArticleChange(idx, 'prixAchat', a.prixAchat || 0);
+    setAchatArticleRefSearch((prev) => prev.map((v, i) => (i === idx ? a.ref : v)));
+    setAchatArticleDesSearch((prev) => prev.map((v, i) => (i === idx ? a.designation : v)));
+    setAchatArticleRefDropdown((prev) => prev.map((v, i) => (i === idx ? false : v)));
+    setAchatArticleDesDropdown((prev) => prev.map((v, i) => (i === idx ? false : v)));
+  };
+  const handleAchatArticleDesInputFocus = (idx: number) => {
+    setAchatArticleDesDropdown((prev) => prev.map((v, i) => (i === idx ? true : v)));
+  };
+
+  // Handler for click outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      achatArticleRefInputRefs.current.forEach((ref, idx) => {
+        if (ref && event.target instanceof Node && !ref.contains(event.target)) {
+          setAchatArticleRefDropdown((prev) => prev.map((v, i) => (i === idx ? false : v)));
+        }
+      });
+      achatArticleDesInputRefs.current.forEach((ref, idx) => {
+        if (ref && event.target instanceof Node && !ref.contains(event.target)) {
+          setAchatArticleDesDropdown((prev) => prev.map((v, i) => (i === idx ? false : v)));
+        }
+      });
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Load all data from localForage on mount
   useEffect(() => {
@@ -205,25 +307,36 @@ export default function AccueilERPTest() {
     setAchatForm({ ...achatForm, articles: achatForm.articles.filter((_, i) => i !== idx) });
   };
 
+  // When submitting achat, ensure each article has a ref if possible
   const handleAchatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!achatForm.fournisseur.trim() || !achatForm.date.trim()) return;
+    // Ensure each article has a ref if possible
+    const updatedArticles = achatForm.articles.map(art => {
+      if (!art.ref && art.designation) {
+        const found = articles.find(a => a.designation === art.designation);
+        if (found) {
+          return { ...art, ref: found.ref };
+        }
+      }
+      return art;
+    });
     let newAchats;
     if (editAchatIdx !== null) {
       // Edit mode
       const updated = [...achats];
-      updated[editAchatIdx] = { ...achats[editAchatIdx], ...achatForm };
+      updated[editAchatIdx] = { ...achats[editAchatIdx], ...achatForm, articles: updatedArticles };
       newAchats = updated;
       await saveAchats(updated);
       setEditAchatIdx(null);
     } else {
       // Add mode
-      newAchats = [...achats, { ...achatForm, id: Date.now() }];
+      newAchats = [...achats, { ...achatForm, id: Date.now(), articles: updatedArticles }];
       await saveAchats(newAchats);
     }
     // Update stock for each article in achat
     const newStock = [...stock];
-    achatForm.articles.forEach(art => {
+    updatedArticles.forEach(art => {
       if (!art.ref && !art.designation) return;
       const idx = newStock.findIndex(s => s.ref === art.ref && s.depot === art.depot);
       if (idx !== -1) {
@@ -254,6 +367,14 @@ export default function AccueilERPTest() {
     setShowAchatForm(true);
   };
 
+  // Add handler for deleting achat
+  const handleDeleteAchat = async (idx: number) => {
+    if (window.confirm("Voulez-vous vraiment supprimer cet achat ?")) {
+      const updated = achats.filter((_, i) => i !== idx);
+      setAchatsState(updated);
+      await setAchats(updated);
+    }
+  };
 
 
 
@@ -283,6 +404,22 @@ export default function AccueilERPTest() {
   };
   const cancelDeleteVente = () => {
     setShowDeleteVenteIdx(null);
+  };
+
+  // Handler for deleting stock item
+  const handleDeleteStock = (idx: number) => {
+    setShowDeleteStockIdx(idx);
+  };
+  const confirmDeleteStock = async () => {
+    if (showDeleteStockIdx !== null) {
+      const updated = stock.filter((_, i) => i !== showDeleteStockIdx);
+      setStockState(updated);
+      await setStock(updated);
+      setShowDeleteStockIdx(null);
+    }
+  };
+  const cancelDeleteStock = () => {
+    setShowDeleteStockIdx(null);
   };
 
   // Table columns and data per section
@@ -349,6 +486,7 @@ export default function AccueilERPTest() {
       ]
     : activeMenu === "stock"
     ? [
+        { key: "refresh", label: "Rafraîchir", onClick: async () => { const s = await getStock() as StockItem[]; setStockState(s); } },
         { key: "export", label: "Exporter", onClick: () => exportStock(stock) },
       ]
     : activeMenu === "ventes"
@@ -501,7 +639,7 @@ export default function AccueilERPTest() {
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
               <form
                 onSubmit={handleAchatSubmit}
-                className="relative bg-[var(--card)] rounded-2xl shadow-2xl border border-[var(--primary)]/20 w-full max-w-lg sm:max-w-2xl p-0 overflow-hidden animate-fade-in mx-2"
+                className="relative bg-[var(--card)] rounded-2xl shadow-2xl border border-[var(--primary)]/20 w-full max-w-lg sm:max-w-4xl p-0 overflow-hidden animate-fade-in mx-2"
               >
                 <div className="flex items-center gap-3 px-6 pt-6 pb-2 border-b border-[var(--primary)]/20 bg-gradient-to-r from-[var(--primary)]/5 to-[var(--primary)]/10">
                   <div className="w-10 h-10 bg-[var(--primary)] rounded-full flex items-center justify-center shadow">
@@ -518,29 +656,62 @@ export default function AccueilERPTest() {
                     <label className="block font-semibold mb-1 text-[var(--primary-dark)]">Date *</label>
                     <input name="date" type="date" value={achatForm.date} onChange={handleAchatChange} required className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition" placeholder="Date" />
                   </div>
-                  <div>
-                    <label className="block font-semibold mb-1 text-[var(--primary-dark)]">Montant</label>
-                    <input name="montant" type="number" value={achatForm.montant} onChange={handleAchatChange} className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition" placeholder="Montant" />
-                  </div>
-                  <div className="md:col-span-2">
+                  <div className="sm:col-span-2">
                     <label className="block font-semibold mb-2 text-[var(--primary-dark)]">Articles achetés</label>
                     <div className="space-y-3">
                       {achatForm.articles.map((art, idx) => (
-                        <div key={idx} className="flex flex-col md:flex-row gap-2 md:gap-4 items-center bg-[var(--primary)]/5 border border-[var(--border)] rounded-lg p-3">
-                          <input
-                            type="text"
-                            value={art.ref}
-                            onChange={e => handleAchatArticleChange(idx, 'ref', e.target.value)}
-                            className="w-full md:w-40 px-3 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition"
-                            placeholder="Référence"
-                          />
-                          <input
-                            type="text"
-                            value={art.designation}
-                            onChange={e => handleAchatArticleChange(idx, 'designation', e.target.value)}
-                            className="w-full md:flex-1 px-3 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition"
-                            placeholder="Désignation"
-                          />
+                        <div key={idx} className="flex flex-col md:flex-row gap-2 md:gap-4 items-center bg-[var(--primary)]/5 border border-[var(--border)] rounded-lg p-3 relative">
+                          {/* Reference Autocomplete Input */}
+                          <div className="w-full md:w-40 relative" ref={el => { achatArticleRefInputRefs.current[idx] = el; }}>
+                            <input
+                              type="text"
+                              value={achatArticleRefSearch[idx] || ""}
+                              onChange={e => handleAchatArticleRefSearchChange(idx, e.target.value)}
+                              onFocus={() => handleAchatArticleRefInputFocus(idx)}
+                              className="w-full px-3 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition"
+                              placeholder="Référence"
+                            />
+                            {achatArticleRefDropdown[idx] && (achatArticleRefFiltered[idx]?.length ?? 0) > 0 && (
+                              <div className="absolute z-50 left-0 right-0 bg-white border border-[var(--border)] rounded-lg shadow-lg max-h-48 overflow-y-auto mt-1">
+                                {achatArticleRefFiltered[idx].map(a => (
+                                  <button
+                                    key={a.ref}
+                                    type="button"
+                                    className="w-full text-left px-4 py-2 hover:bg-[var(--primary)]/10"
+                                    onClick={() => handleAchatArticleRefSelect(idx, a)}
+                                  >
+                                    {a.ref} - {a.designation}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          {/* Designation Autocomplete Input */}
+                          <div className="w-full md:w-72 flex-1 relative" ref={el => { achatArticleDesInputRefs.current[idx] = el; }}>
+                            <input
+                              type="text"
+                              value={achatArticleDesSearch[idx] || ""}
+                              onChange={e => handleAchatArticleDesSearchChange(idx, e.target.value)}
+                              onFocus={() => handleAchatArticleDesInputFocus(idx)}
+                              className="w-full px-3 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition"
+                              placeholder="Désignation"
+                            />
+                            {achatArticleDesDropdown[idx] && (achatArticleDesFiltered[idx]?.length ?? 0) > 0 && (
+                              <div className="absolute z-50 left-0 right-0 bg-white border border-[var(--border)] rounded-lg shadow-lg max-h-48 overflow-y-auto mt-1">
+                                {achatArticleDesFiltered[idx].map(a => (
+                                  <button
+                                    key={a.ref}
+                                    type="button"
+                                    className="w-full text-left px-4 py-2 hover:bg-[var(--primary)]/10"
+                                    onClick={() => handleAchatArticleDesSelect(idx, a)}
+                                  >
+                                    {a.ref} - {a.designation}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          {/* Quantity Input */}
                           <input
                             type="number"
                             min="1"
@@ -549,12 +720,26 @@ export default function AccueilERPTest() {
                             className="w-24 px-3 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition"
                             placeholder="Quantité"
                           />
-                          <input
-                            type="text"
+                          {/* Depot Input */}
+                          <select
                             value={art.depot}
                             onChange={e => handleAchatArticleChange(idx, 'depot', e.target.value)}
+                            className="w-full md:w-56 px-3 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition"
+                          >
+                            <option value="">Sélectionner un dépôt</option>
+                            {depots.map(d => (
+                              <option key={d} value={d}>{d}</option>
+                            ))}
+                          </select>
+                          {/* Prix Achat Input */}
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={art.prixAchat || ''}
+                            onChange={e => handleAchatArticleChange(idx, 'prixAchat', e.target.value)}
                             className="w-32 px-3 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition"
-                            placeholder="Dépôt"
+                            placeholder="Prix Achat"
                           />
                           <button type="button" onClick={() => handleRemoveAchatArticle(idx)} className="text-[var(--danger)] hover:text-[var(--danger-dark)] text-lg font-bold px-2">&times;</button>
                         </div>
@@ -566,7 +751,7 @@ export default function AccueilERPTest() {
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-3 px-6 pb-6 pt-2 border-t border-[var(--primary)]/20 bg-gradient-to-r from-[var(--primary)]/5 to-[var(--primary)]/10 justify-end">
+                <div className="flex flex-col sm:flex-row gap-3 px-6 pb-6 pt-2 border-t border-[var(--primary)]/20 bg-gradient-to-r from-[var(--primary)]/5 to-[var(--primary)]/10 justify-end sticky bottom-0 bg-[var(--card)] z-10">
                   <button type="button" onClick={handleAchatCancel} className="px-5 py-2 rounded-lg font-semibold bg-[var(--border)] text-[var(--muted)] hover:bg-[var(--border)]/80 transition">Annuler</button>
                   <button type="submit" className="px-5 py-2 rounded-lg font-semibold bg-[var(--primary)] text-white hover:bg-[var(--primary-dark)] shadow transition">Enregistrer</button>
                 </div>
@@ -583,13 +768,15 @@ export default function AccueilERPTest() {
                     {columns.map((col) => (
                       <th key={col} className="px-3 sm:px-4 py-3 text-left font-semibold text-[var(--primary-dark)] whitespace-nowrap text-xs sm:text-sm tracking-wide">{col}</th>
                     ))}
-                    {(activeMenu === "tiers" || activeMenu === "articles" || activeMenu === "achat") && <th className="px-3 sm:px-4 py-3"></th>}
+                    {(activeMenu === "tiers" || activeMenu === "articles" || activeMenu === "achat" || activeMenu === "stock" || activeMenu === "ventes") && (
+                      <th className="px-3 sm:px-4 py-3 text-left font-semibold text-[var(--primary-dark)] whitespace-nowrap text-xs sm:text-sm tracking-wide">Action</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
                   {rows.length === 0 ? (
                     <tr>
-                      <td colSpan={columns.length + ((activeMenu === "tiers" || activeMenu === "articles" || activeMenu === "achat") ? 1 : 0)} className="text-center text-[var(--muted)] py-8 text-sm">Aucune donnée</td>
+                      <td colSpan={columns.length + ((activeMenu === "tiers" || activeMenu === "articles" || activeMenu === "achat") ? 1 : (activeMenu === "stock" ? 1 : 0))} className="text-center text-[var(--muted)] py-8 text-sm">Aucune donnée</td>
                     </tr>
                   ) : (
                     rows.map((row, idx) => (
@@ -629,6 +816,24 @@ export default function AccueilERPTest() {
                                 onClick={() => handleEditAchat(idx)}
                               >
                                 Éditer
+                              </button>
+                              <button
+                                className="px-2 py-1.5 sm:py-1 text-xs bg-[var(--danger)]/10 text-[var(--danger)] rounded hover:bg-[var(--danger)]/20 transition"
+                                onClick={() => handleDeleteAchat(idx)}
+                              >
+                                Supprimer
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                        {activeMenu === "stock" && (
+                          <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
+                            <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                              <button
+                                className="px-2 py-1.5 sm:py-1 text-xs bg-[var(--danger)]/10 text-[var(--danger)] rounded hover:bg-[var(--danger)]/20 transition"
+                                onClick={() => handleDeleteStock(idx)}
+                              >
+                                Supprimer
                               </button>
                             </div>
                           </td>
@@ -671,6 +876,18 @@ export default function AccueilERPTest() {
             <div className="flex gap-2 justify-end">
               <button onClick={cancelDeleteVente} className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">Annuler</button>
               <button onClick={confirmDeleteVente} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Supprimer</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showDeleteStockIdx !== null && activeMenu === "stock" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
+            <h3 className="text-lg font-bold mb-4 text-red-700">Confirmer la suppression</h3>
+            <p className="mb-6">Voulez-vous vraiment supprimer cet article du stock ? Cette action est irréversible.</p>
+            <div className="flex gap-2 justify-end">
+              <button onClick={cancelDeleteStock} className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">Annuler</button>
+              <button onClick={confirmDeleteStock} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Supprimer</button>
             </div>
           </div>
         </div>
