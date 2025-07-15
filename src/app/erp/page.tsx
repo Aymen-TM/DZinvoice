@@ -52,7 +52,6 @@ export default function AccueilERPTest() {
   const [showAchatForm, setShowAchatForm] = useState(false);
   const [achatForm, setAchatForm] = useState<Omit<Achat, 'id'>>({ ...emptyAchat, articles: [] });
   const [editAchatIdx, setEditAchatIdx] = useState<number | null>(null);
-  const [achatError, setAchatError] = useState<string>("");
   const [stock, setStockState] = useState<StockItem[]>([]);
   const [ventes, setVentesState] = useState<Vente[]>([]);
   const [showDeleteVenteIdx, setShowDeleteVenteIdx] = useState<number | null>(null);
@@ -62,10 +61,8 @@ export default function AccueilERPTest() {
   const searchParams = useSearchParams();
 
   // Add at the top level of AccueilERPTest, after other useState hooks
-  const [achatArticleRefSearch, setAchatArticleRefSearch] = useState<string[]>([]);
   const [achatArticleRefDropdown, setAchatArticleRefDropdown] = useState<boolean[]>([]);
   const [achatArticleRefFiltered, setAchatArticleRefFiltered] = useState<Article[][]>([]);
-  const [achatArticleDesSearch, setAchatArticleDesSearch] = useState<string[]>([]);
   const [achatArticleDesDropdown, setAchatArticleDesDropdown] = useState<boolean[]>([]);
   const [achatArticleDesFiltered, setAchatArticleDesFiltered] = useState<Article[][]>([]);
   const achatArticleRefInputRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -82,7 +79,6 @@ export default function AccueilERPTest() {
   const [pendingFilters, setPendingFilters] = useState<{ [key: string]: string[] }>({});
 
   // Add state for depot autocomplete
-  const [achatDepotSearch, setAchatDepotSearch] = useState<string[]>([]);
   const [achatDepotDropdown, setAchatDepotDropdown] = useState<boolean[]>([]);
   const [achatDepotFiltered, setAchatDepotFiltered] = useState<string[][]>([]);
 
@@ -90,10 +86,8 @@ export default function AccueilERPTest() {
 
   // Sync arrays with achatForm.articles length
   useEffect(() => {
-    setAchatArticleRefSearch((prev) => achatForm.articles.map((art, idx) => prev[idx] ?? art.ref ?? ""));
     setAchatArticleRefDropdown((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? false));
     setAchatArticleRefFiltered((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? articles));
-    setAchatArticleDesSearch((prev) => achatForm.articles.map((art, idx) => prev[idx] ?? art.designation ?? ""));
     setAchatArticleDesDropdown((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? false));
     setAchatArticleDesFiltered((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? articles));
     achatArticleRefInputRefs.current = achatForm.articles.map((_, idx) => achatArticleRefInputRefs.current[idx] ?? null);
@@ -102,7 +96,6 @@ export default function AccueilERPTest() {
 
   // Sync depot autocomplete arrays with achatForm.articles length
   useEffect(() => {
-    setAchatDepotSearch((prev) => achatForm.articles.map((art, idx) => prev[idx] ?? art.depot ?? ""));
     setAchatDepotDropdown((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? false));
     setAchatDepotFiltered((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? depots));
   }, [achatForm.articles.length, achatForm.articles, depots]);
@@ -130,7 +123,6 @@ export default function AccueilERPTest() {
 
   // Handlers for reference field
   const handleAchatArticleRefSearchChange = (idx: number, value: string) => {
-    setAchatArticleRefSearch((prev) => prev.map((v, i) => (i === idx ? value : v)));
     setAchatArticleRefDropdown((prev) => prev.map((v, i) => (i === idx ? true : v)));
     setAchatArticleRefFiltered((prev) =>
       prev.map((arr, i) =>
@@ -145,7 +137,7 @@ export default function AccueilERPTest() {
     handleAchatItemChange(idx, 'ref', a.ref);
     handleAchatItemChange(idx, 'designation', a.designation);
     handleAchatItemChange(idx, 'prixAchat', a.prixAchat || 0);
-    setAchatArticleRefSearch((prev) => prev.map((v, i) => (i === idx ? a.ref : v)));
+    setAchatArticleRefDropdown((prev) => prev.map((v, i) => (i === idx ? a.ref : v)));
     setAchatArticleDesSearch((prev) => prev.map((v, i) => (i === idx ? a.designation : v)));
     setAchatArticleRefDropdown((prev) => prev.map((v, i) => (i === idx ? false : v)));
     setAchatArticleDesDropdown((prev) => prev.map((v, i) => (i === idx ? false : v)));
@@ -398,7 +390,7 @@ export default function AccueilERPTest() {
       await saveAchats(newAchats);
     }
     // Update stock for each article in achat
-    let newStock = [...stock];
+    const newStock = [...stock];
     achatForm.articles.forEach(art => {
       const idx = newStock.findIndex(s => s.ref === art.ref && s.depot === art.depot);
       if (idx !== -1) {
