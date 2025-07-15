@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Client } from '@/types/invoice';
 import { getClients } from '@/utils/erpStorage';
 import type { Client as ERPClient } from '@/types/erp';
@@ -13,6 +13,15 @@ interface ClientInfoProps {
 export default function ClientInfo({ client, onClientChange }: ClientInfoProps) {
   const [erpClients, setErpClients] = useState<ERPClient[]>([]);
   const [isLoadingClients, setIsLoadingClients] = useState(false);
+  const [aiWarning, setAiWarning] = useState('');
+  const [nifWarning, setNifWarning] = useState('');
+  const [nisWarning, setNisWarning] = useState('');
+  const [activiteOptions, setActiviteOptions] = useState<{ CODE: string; LIBELLE: string }[]>([]);
+  const [activiteInput, setActiviteInput] = useState(client.activity || '');
+  const [activiteSuggestions, setActiviteSuggestions] = useState<{ CODE: string; LIBELLE: string }[]>([]);
+  const [showActiviteSuggestions, setShowActiviteSuggestions] = useState(false);
+  const [activiteHighlighted, setActiviteHighlighted] = useState(-1);
+  const activiteRefs = useRef<(HTMLLIElement | null)[]>([]);
 
   // Load ERP clients on component mount
   useEffect(() => {
@@ -31,11 +40,94 @@ export default function ClientInfo({ client, onClientChange }: ClientInfoProps) 
     loadClients();
   }, []);
 
+  useEffect(() => {
+    fetch('/codes_nomenclature.json')
+      .then(res => res.json())
+      .then(data => setActiviteOptions(data));
+  }, []);
+
+  useEffect(() => {
+    setActiviteInput(client.activity || '');
+  }, [client.activity]);
+
+  useEffect(() => {
+    if (
+      activiteHighlighted >= 0 &&
+      activiteHighlighted < activiteSuggestions.length &&
+      activiteRefs.current[activiteHighlighted]
+    ) {
+      activiteRefs.current[activiteHighlighted]?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [activiteHighlighted, activiteSuggestions]);
+
   const handleChange = (field: keyof Client, value: string) => {
+    if (field === 'ai') {
+      if (value.length > 11) {
+        setAiWarning('Le numéro AI ne doit pas dépasser 11 caractères.');
+      } else if (!/^\d*$/.test(value)) {
+        setAiWarning('Le numéro AI ne doit contenir que des chiffres.');
+      } else {
+        setAiWarning('');
+      }
+    }
+    if (field === 'nif') {
+      if (!/^\d*$/.test(value)) {
+        setNifWarning('Le NIF ne doit contenir que des chiffres.');
+      } else {
+        setNifWarning('');
+      }
+    }
+    if (field === 'nis') {
+      if (!/^\d*$/.test(value)) {
+        setNisWarning('Le NIS ne doit contenir que des chiffres.');
+      } else {
+        setNisWarning('');
+      }
+    }
     onClientChange({
       ...client,
       [field]: value,
     });
+  };
+
+  const handleActiviteInput = (value: string) => {
+    setActiviteInput(value);
+    onClientChange({ ...client, activity: value });
+    if (value.length > 1) {
+      const suggestions = activiteOptions.filter(opt =>
+        opt.LIBELLE.toLowerCase().includes(value.toLowerCase()) ||
+        opt.CODE.includes(value)
+      ).slice(0, 10);
+      setActiviteSuggestions(suggestions);
+      setShowActiviteSuggestions(true);
+      setActiviteHighlighted(-1);
+    } else {
+      setShowActiviteSuggestions(false);
+      setActiviteHighlighted(-1);
+    }
+  };
+
+  const handleActiviteSelect = (libelle: string) => {
+    setActiviteInput(libelle);
+    onClientChange({ ...client, activity: libelle });
+    setShowActiviteSuggestions(false);
+  };
+
+  const handleActiviteKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showActiviteSuggestions || activiteSuggestions.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiviteHighlighted(h => Math.min(h + 1, activiteSuggestions.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiviteHighlighted(h => Math.max(h - 1, 0));
+    } else if (e.key === 'Enter') {
+      if (activiteHighlighted >= 0 && activiteHighlighted < activiteSuggestions.length) {
+        handleActiviteSelect(activiteSuggestions[activiteHighlighted].LIBELLE);
+      }
+    } else if (e.key === 'Escape') {
+      setShowActiviteSuggestions(false);
+    }
   };
 
   const handleClientSelect = (selectedClient: ERPClient) => {
@@ -145,13 +237,34 @@ export default function ClientInfo({ client, onClientChange }: ClientInfoProps) 
           <label className="block text-sm font-semibold text-gray-700 mb-2 group-hover/item:text-green-600 transition-colors duration-200">
             Activité
           </label>
-          <input
-            type="text"
-            value={client.activity}
-            onChange={(e) => handleChange('activity', e.target.value)}
-            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm hover:bg-white/70 focus:bg-white/90 group-hover/item:border-green-300 text-sm sm:text-base"
-            placeholder="Activité"
-          />
+          <div className="relative">
+            <input
+              type="text"
+              value={activiteInput}
+              onChange={(e) => handleActiviteInput(e.target.value)}
+              onFocus={() => activiteInput.length > 1 && setShowActiviteSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowActiviteSuggestions(false), 100)}
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm hover:bg-white/70 focus:bg-white/90 group-hover/item:border-green-300 text-sm sm:text-base"
+              placeholder="Activité"
+              autoComplete="off"
+              onKeyDown={handleActiviteKeyDown}
+            />
+            {showActiviteSuggestions && activiteSuggestions.length > 0 && (
+              <ul className="absolute z-10 left-0 right-0 bg-white border border-gray-200 rounded-xl mt-1 max-h-56 overflow-y-auto shadow-lg">
+                {activiteSuggestions.map((opt, idx) => (
+                  <li
+                    key={opt.CODE}
+                    ref={el => { activiteRefs.current[idx] = el; }}
+                    className={`px-4 py-2 cursor-pointer text-sm ${idx === activiteHighlighted ? 'bg-green-100 font-semibold' : 'hover:bg-green-100'}`}
+                    onMouseDown={() => handleActiviteSelect(opt.LIBELLE)}
+                  >
+                    <span className="font-mono text-gray-500 mr-2">{opt.CODE}</span>
+                    {opt.LIBELLE}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
 
         <div className="space-y-2 group/item">
@@ -200,10 +313,15 @@ export default function ClientInfo({ client, onClientChange }: ClientInfoProps) 
           <input
             type="text"
             value={client.nif}
-            onChange={(e) => handleChange('nif', e.target.value)}
+            onChange={(e) => handleChange('nif', e.target.value.replace(/\D/g, ''))}
             className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm hover:bg-white/70 focus:bg-white/90 group-hover/item:border-green-300 text-sm sm:text-base"
             placeholder="NIF"
+            inputMode="numeric"
+            pattern="[0-9]*"
           />
+          {nifWarning && (
+            <p className="text-xs text-red-600 mt-1">{nifWarning}</p>
+          )}
         </div>
 
         <div className="space-y-2 group/item">
@@ -213,10 +331,15 @@ export default function ClientInfo({ client, onClientChange }: ClientInfoProps) 
           <input
             type="text"
             value={client.ai}
-            onChange={(e) => handleChange('ai', e.target.value)}
+            onChange={(e) => handleChange('ai', e.target.value.replace(/\D/g, ''))}
             className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm hover:bg-white/70 focus:bg-white/90 group-hover/item:border-green-300 text-sm sm:text-base"
             placeholder="AI"
+            inputMode="numeric"
+            pattern="[0-9]*"
           />
+          {aiWarning && (
+            <p className="text-xs text-red-600 mt-1">{aiWarning}</p>
+          )}
         </div>
 
         <div className="space-y-2 group/item">
@@ -226,10 +349,15 @@ export default function ClientInfo({ client, onClientChange }: ClientInfoProps) 
           <input
             type="text"
             value={client.nis}
-            onChange={(e) => handleChange('nis', e.target.value)}
+            onChange={(e) => handleChange('nis', e.target.value.replace(/\D/g, ''))}
             className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm hover:bg-white/70 focus:bg-white/90 group-hover/item:border-green-300 text-sm sm:text-base"
             placeholder="NIS"
+            inputMode="numeric"
+            pattern="[0-9]*"
           />
+          {nisWarning && (
+            <p className="text-xs text-red-600 mt-1">{nisWarning}</p>
+          )}
         </div>
       </div>
     </div>
