@@ -1,17 +1,19 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { Client, Article, Achat, AchatArticle, StockItem, Vente } from '@/types/erp';
 import { 
   getClients, setClients, getArticles, setArticles, 
   getAchats, setAchats, getStock, setStock 
 } from '@/utils/erpStorage';
-import { getVentes, setVentes, deleteInvoice } from '@/utils/invoiceStorage';
+import { getVentes, setVentes, deleteInvoice, getCompleteInvoiceById, getCompleteInvoices } from '@/utils/invoiceStorage';
 import { 
   exportClients, exportArticles, exportAchats, 
   exportStock, exportVentes 
 } from '@/utils/erpExport';
 import { ERP_MENU_ITEMS, DEFAULT_CLIENT_FORM, DEFAULT_ARTICLE_FORM, DEFAULT_ACHAT_FORM } from '@/constants/erp';
+import localforage from 'localforage';
+import { generateInvoicePDF } from '@/utils/pdfGenerator';
 
 const TOOLBAR_BUTTONS = [
   { key: "new", label: "New" },
@@ -48,13 +50,16 @@ export default function AccueilERPTest() {
   const [editArticleIdx, setEditArticleIdx] = useState<number | null>(null);
   const [achats, setAchatsState] = useState<Achat[]>([]);
   const [showAchatForm, setShowAchatForm] = useState(false);
-  const [achatForm, setAchatForm] = useState<Omit<Achat, 'id'>>(emptyAchat);
+  const [achatForm, setAchatForm] = useState<Omit<Achat, 'id'>>({ ...emptyAchat, articles: [] });
   const [editAchatIdx, setEditAchatIdx] = useState<number | null>(null);
+  const [achatError, setAchatError] = useState<string>("");
   const [stock, setStockState] = useState<StockItem[]>([]);
   const [ventes, setVentesState] = useState<Vente[]>([]);
   const [showDeleteVenteIdx, setShowDeleteVenteIdx] = useState<number | null>(null);
   const [showDeleteStockIdx, setShowDeleteStockIdx] = useState<number | null>(null);
+  const [showDeleteArticleIdx, setShowDeleteArticleIdx] = useState<number | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Add at the top level of AccueilERPTest, after other useState hooks
   const [achatArticleRefSearch, setAchatArticleRefSearch] = useState<string[]>([]);
@@ -76,6 +81,13 @@ export default function AccueilERPTest() {
   const [filterSearch, setFilterSearch] = useState<{ [key: string]: string }>({});
   const [pendingFilters, setPendingFilters] = useState<{ [key: string]: string[] }>({});
 
+  // Add state for depot autocomplete
+  const [achatDepotSearch, setAchatDepotSearch] = useState<string[]>([]);
+  const [achatDepotDropdown, setAchatDepotDropdown] = useState<boolean[]>([]);
+  const [achatDepotFiltered, setAchatDepotFiltered] = useState<string[][]>([]);
+
+  const [pdfLoadingIdx, setPdfLoadingIdx] = useState<number | null>(null);
+
   // Sync arrays with achatForm.articles length
   useEffect(() => {
     setAchatArticleRefSearch((prev) => achatForm.articles.map((art, idx) => prev[idx] ?? art.ref ?? ""));
@@ -88,6 +100,13 @@ export default function AccueilERPTest() {
     achatArticleDesInputRefs.current = achatForm.articles.map((_, idx) => achatArticleDesInputRefs.current[idx] ?? null);
   }, [achatForm.articles.length, achatForm.articles, articles]);
 
+  // Sync depot autocomplete arrays with achatForm.articles length
+  useEffect(() => {
+    setAchatDepotSearch((prev) => achatForm.articles.map((art, idx) => prev[idx] ?? art.depot ?? ""));
+    setAchatDepotDropdown((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? false));
+    setAchatDepotFiltered((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? depots));
+  }, [achatForm.articles.length, achatForm.articles, depots]);
+
   // Load depots from stock on mount
   useEffect(() => {
     (async () => {
@@ -96,6 +115,18 @@ export default function AccueilERPTest() {
       setDepots(uniqueDepots);
     })();
   }, []);
+
+  // Add debug log for article changes
+  useEffect(() => {
+    console.log('achatForm.articles changed:', achatForm.articles);
+  }, [achatForm.articles]);
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && ["tiers", "articles", "achat", "stock", "ventes"].includes(tab)) {
+      setActiveMenu(tab);
+    }
+  }, [searchParams]);
 
   // Handlers for reference field
   const handleAchatArticleRefSearchChange = (idx: number, value: string) => {
@@ -108,11 +139,12 @@ export default function AccueilERPTest() {
           : arr
       )
     );
+    handleAchatItemChange(idx, 'ref', value);
   };
   const handleAchatArticleRefSelect = (idx: number, a: Article) => {
-    handleAchatArticleChange(idx, 'ref', a.ref);
-    handleAchatArticleChange(idx, 'designation', a.designation);
-    handleAchatArticleChange(idx, 'prixAchat', a.prixAchat || 0);
+    handleAchatItemChange(idx, 'ref', a.ref);
+    handleAchatItemChange(idx, 'designation', a.designation);
+    handleAchatItemChange(idx, 'prixAchat', a.prixAchat || 0);
     setAchatArticleRefSearch((prev) => prev.map((v, i) => (i === idx ? a.ref : v)));
     setAchatArticleDesSearch((prev) => prev.map((v, i) => (i === idx ? a.designation : v)));
     setAchatArticleRefDropdown((prev) => prev.map((v, i) => (i === idx ? false : v)));
@@ -133,11 +165,12 @@ export default function AccueilERPTest() {
           : arr
       )
     );
+    handleAchatItemChange(idx, 'designation', value);
   };
   const handleAchatArticleDesSelect = (idx: number, a: Article) => {
-    handleAchatArticleChange(idx, 'ref', a.ref);
-    handleAchatArticleChange(idx, 'designation', a.designation);
-    handleAchatArticleChange(idx, 'prixAchat', a.prixAchat || 0);
+    handleAchatItemChange(idx, 'ref', a.ref);
+    handleAchatItemChange(idx, 'designation', a.designation);
+    handleAchatItemChange(idx, 'prixAchat', a.prixAchat || 0);
     setAchatArticleRefSearch((prev) => prev.map((v, i) => (i === idx ? a.ref : v)));
     setAchatArticleDesSearch((prev) => prev.map((v, i) => (i === idx ? a.designation : v)));
     setAchatArticleRefDropdown((prev) => prev.map((v, i) => (i === idx ? false : v)));
@@ -291,6 +324,21 @@ export default function AccueilERPTest() {
     setShowArticleForm(true);
   };
 
+  const handleDeleteArticle = (idx: number) => {
+    setShowDeleteArticleIdx(idx);
+  };
+  const confirmDeleteArticle = async () => {
+    if (showDeleteArticleIdx !== null) {
+      const updated = articles.filter((_, i) => i !== showDeleteArticleIdx);
+      setArticlesState(updated);
+      await setArticles(updated);
+      setShowDeleteArticleIdx(null);
+    }
+  };
+  const cancelDeleteArticle = () => {
+    setShowDeleteArticleIdx(null);
+  };
+
 
 
 
@@ -301,61 +349,57 @@ export default function AccueilERPTest() {
     await setAchats(newAchats);
   };
 
-  // Achat handlers
-  const handleAchatChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAchatItemChange = (idx: number, field: keyof AchatArticle, value: string | number) => {
+    setAchatForm((prev) => ({
+      ...prev,
+      articles: prev.articles.map((art, i) =>
+        i === idx ? { ...art, [field]: field === 'quantite' ? Number(value) : value } : art
+      ),
+    }));
+  };
+
+  const handleAddAchatItem = () => {
+    setAchatForm((prev) => ({ ...prev, articles: [...prev.articles, { ...emptyAchatArticle }] }));
+  };
+
+  const handleRemoveAchatItem = (idx: number) => {
+    setAchatForm((prev) => ({ ...prev, articles: prev.articles.filter((_, i) => i !== idx) }));
+  };
+
+  const handleAchatFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setAchatForm({
-      ...achatForm,
-      [name]: name === 'montant' ? parseFloat(value) || 0 : value,
-    });
+    setAchatForm((prev) => ({ ...prev, [name]: name === 'montant' ? parseFloat(value) || 0 : value }));
   };
 
-  const handleAchatArticleChange = (idx: number, field: keyof AchatArticle, value: string | number) => {
-    const updated = achatForm.articles.map((art, i) =>
-      i === idx ? { ...art, [field]: field === 'quantite' ? Number(value) : value } : art
-    );
-    setAchatForm({ ...achatForm, articles: updated });
-  };
-
-  const handleAddAchatArticle = () => {
-    setAchatForm({ ...achatForm, articles: [...achatForm.articles, { ...emptyAchatArticle }] });
-  };
-
-  const handleRemoveAchatArticle = (idx: number) => {
-    setAchatForm({ ...achatForm, articles: achatForm.articles.filter((_, i) => i !== idx) });
-  };
-
-  // When submitting achat, ensure each article has a ref if possible
   const handleAchatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!achatForm.fournisseur.trim() || !achatForm.date.trim()) return;
-    // Ensure each article has a ref if possible
-    const updatedArticles = achatForm.articles.map(art => {
-      if (!art.ref && art.designation) {
-        const found = articles.find(a => a.designation === art.designation);
-        if (found) {
-          return { ...art, ref: found.ref };
-        }
-      }
-      return art;
-    });
+    if (!achatForm.fournisseur.trim() || !achatForm.date.trim()) {
+      setAchatError('Fournisseur et date sont obligatoires.');
+      return;
+    }
+    if (achatForm.articles.length === 0) {
+      setAchatError('Ajoutez au moins un article.');
+      return;
+    }
+    if (achatForm.articles.some(art => !art.ref || !art.designation || !art.depot || !art.quantite)) {
+      setAchatError('Tous les champs des articles sont obligatoires.');
+      return;
+    }
+    setAchatError("");
     let newAchats;
     if (editAchatIdx !== null) {
       // Edit mode
-      const updated = [...achats];
-      updated[editAchatIdx] = { ...achats[editAchatIdx], ...achatForm, articles: updatedArticles };
-      newAchats = updated;
-      await saveAchats(updated);
+      newAchats = achats.map((a, i) => i === editAchatIdx ? { ...a, ...achatForm } : a);
+      await saveAchats(newAchats);
       setEditAchatIdx(null);
     } else {
       // Add mode
-      newAchats = [...achats, { ...achatForm, id: Date.now(), articles: updatedArticles }];
+      newAchats = [...achats, { ...achatForm, id: Date.now(), articles: achatForm.articles }];
       await saveAchats(newAchats);
     }
     // Update stock for each article in achat
-    const newStock = [...stock];
-    updatedArticles.forEach(art => {
-      if (!art.ref && !art.designation) return;
+    let newStock = [...stock];
+    achatForm.articles.forEach(art => {
       const idx = newStock.findIndex(s => s.ref === art.ref && s.depot === art.depot);
       if (idx !== -1) {
         newStock[idx] = { ...newStock[idx], quantite: newStock[idx].quantite + art.quantite };
@@ -369,20 +413,24 @@ export default function AccueilERPTest() {
       }
     });
     await setStock(newStock);
-    setAchatForm(emptyAchat);
+    setStockState(newStock);
+    setAchatForm({ ...emptyAchat, articles: [] });
     setShowAchatForm(false);
-  };
-
-  const handleAchatCancel = () => {
-    setAchatForm(emptyAchat);
-    setShowAchatForm(false);
-    setEditAchatIdx(null);
   };
 
   const handleEditAchat = (idx: number) => {
-    setAchatForm(achats[idx]);
+    const a = achats[idx];
+    setAchatForm({ ...a, articles: a.articles.map(art => ({ ...art })) });
     setEditAchatIdx(idx);
     setShowAchatForm(true);
+    setAchatError("");
+  };
+
+  const handleAchatCancel = () => {
+    setAchatForm({ ...emptyAchat, articles: [] });
+    setShowAchatForm(false);
+    setEditAchatIdx(null);
+    setAchatError("");
   };
 
   // Add handler for deleting achat
@@ -590,6 +638,29 @@ export default function AccueilERPTest() {
     }
   };
 
+  const clearAllData = async () => {
+    if (!window.confirm('Voulez-vous vraiment supprimer toutes les données ERP ? Cette action est irréversible.')) return;
+    await localforage.setItem('clients', []);
+    await localforage.setItem('articles', []);
+    await localforage.setItem('achats', []);
+    await localforage.setItem('stock_items', []);
+    await localforage.setItem('ventes', []);
+    setClientsState([]);
+    setArticlesState([]);
+    setAchatsState([]);
+    setStockState([]);
+    setVentesState([]);
+    alert('Toutes les données ERP ont été supprimées.');
+  };
+
+  const resetInvoices = async () => {
+    if (!window.confirm('Voulez-vous vraiment réinitialiser toutes les factures ? Cette action est irréversible.')) return;
+    await localforage.setItem('invoices', []);
+    await localforage.setItem('complete_invoices', []);
+    await localforage.setItem('ventes', []);
+    alert('Toutes les factures ont été réinitialisées. Le prochain numéro commencera à 1.');
+  };
+
   // Toolbar buttons: show 'Nouveau' as active for Tiers, Articles, and Achat
   const toolbarButtons: ToolbarButton[] = activeMenu === "tiers"
     ? [
@@ -622,6 +693,74 @@ export default function AccueilERPTest() {
       ]
     : TOOLBAR_BUTTONS;
 
+  const handleAchatDepotSearchChange = (idx: number, value: string) => {
+    setAchatDepotSearch((prev) => prev.map((v, i) => (i === idx ? value : v)));
+    setAchatDepotDropdown((prev) => prev.map((v, i) => (i === idx ? true : v)));
+    setAchatDepotFiltered((prev) =>
+      prev.map((arr, i) =>
+        i === idx
+          ? depots.filter((d) => d.toLowerCase().includes(value.toLowerCase()))
+          : arr
+      )
+    );
+    handleAchatItemChange(idx, 'depot', value);
+  };
+
+  const handleAchatDepotSelect = (idx: number, depot: string) => {
+    handleAchatItemChange(idx, 'depot', depot);
+    setAchatDepotSearch((prev) => prev.map((v, i) => (i === idx ? depot : v)));
+    setAchatDepotDropdown((prev) => prev.map((v, i) => (i === idx ? false : v)));
+  };
+
+  const handleAchatDepotInputFocus = (idx: number) => {
+    setAchatDepotDropdown((prev) => prev.map((v, i) => (i === idx ? true : v)));
+  };
+
+  const handleDownloadVentePDF = async (id: string, idx: number) => {
+    setPdfLoadingIdx(idx);
+    try {
+      // Debug logging
+      console.log('Looking for complete invoice with id:', id);
+      const allCompleteInvoices = await getCompleteInvoices();
+      console.log('All complete invoice IDs:', allCompleteInvoices.map(inv => inv.id));
+      const invoice = await getCompleteInvoiceById(id);
+      if (!invoice) return alert('Facture introuvable.');
+      const pdfBytes = await generateInvoicePDF(invoice);
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `facture_${id}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert('Erreur lors du téléchargement du PDF.');
+    } finally {
+      setPdfLoadingIdx(null);
+    }
+  };
+
+  const handlePreviewVentePDF = async (id: string, idx: number) => {
+    setPdfLoadingIdx(idx);
+    try {
+      // Debug logging
+      console.log('Looking for complete invoice with id:', id);
+      const allCompleteInvoices = await getCompleteInvoices();
+      console.log('All complete invoice IDs:', allCompleteInvoices.map(inv => inv.id));
+      const invoice = await getCompleteInvoiceById(id);
+      if (!invoice) return alert('Facture introuvable.');
+      const pdfBytes = await generateInvoicePDF(invoice);
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      alert('Erreur lors de la prévisualisation du PDF.');
+    } finally {
+      setPdfLoadingIdx(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[var(--background)] flex flex-col pt-16 font-sans">
       {/* Top Menu Bar */}
@@ -652,6 +791,22 @@ export default function AccueilERPTest() {
               >
                 Importer la base
               </button>
+              {process.env.NODE_ENV === 'development' && (
+                <button
+                  className="px-4 py-2 bg-red-100 border border-red-300 rounded-xl text-red-700 font-medium text-xs sm:text-sm hover:bg-red-200 hover:text-red-900 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 transition-colors"
+                  onClick={clearAllData}
+                >
+                  Vider la base
+                </button>
+              )}
+              {process.env.NODE_ENV === 'development' && (
+                <button
+                  className="px-4 py-2 bg-yellow-100 border border-yellow-300 rounded-xl text-yellow-700 font-medium text-xs sm:text-sm hover:bg-yellow-200 hover:text-yellow-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 transition-colors"
+                  onClick={resetInvoices}
+                >
+                  Réinitialiser les factures
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -795,11 +950,11 @@ export default function AccueilERPTest() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 px-6 py-6 bg-gradient-to-br from-[var(--card)] via-[var(--primary)]/5 to-[var(--primary)]/10">
                   <div>
                     <label className="block font-semibold mb-1 text-[var(--primary-dark)]">Fournisseur *</label>
-                    <input name="fournisseur" value={achatForm.fournisseur} onChange={handleAchatChange} required className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition" placeholder="Fournisseur" />
+                    <input name="fournisseur" value={achatForm.fournisseur} onChange={handleAchatFieldChange} required className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition" placeholder="Fournisseur" />
                   </div>
                   <div>
                     <label className="block font-semibold mb-1 text-[var(--primary-dark)]">Date *</label>
-                    <input name="date" type="date" value={achatForm.date} onChange={handleAchatChange} required className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition" placeholder="Date" />
+                    <input name="date" type="date" value={achatForm.date} onChange={handleAchatFieldChange} required className="w-full px-4 py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition" placeholder="Date" />
                   </div>
                   <div className="sm:col-span-2">
                     <label className="block font-semibold mb-2 text-[var(--primary-dark)]">Articles achetés</label>
@@ -810,7 +965,7 @@ export default function AccueilERPTest() {
                           <div className="w-full md:w-40 relative" ref={el => { achatArticleRefInputRefs.current[idx] = el; }}>
                             <input
                               type="text"
-                              value={achatArticleRefSearch[idx] || ""}
+                              value={art.ref}
                               onChange={e => handleAchatArticleRefSearchChange(idx, e.target.value)}
                               onFocus={() => handleAchatArticleRefInputFocus(idx)}
                               className="w-full px-3 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition"
@@ -835,7 +990,7 @@ export default function AccueilERPTest() {
                           <div className="w-full md:w-72 flex-1 relative" ref={el => { achatArticleDesInputRefs.current[idx] = el; }}>
                             <input
                               type="text"
-                              value={achatArticleDesSearch[idx] || ""}
+                              value={art.designation}
                               onChange={e => handleAchatArticleDesSearchChange(idx, e.target.value)}
                               onFocus={() => handleAchatArticleDesInputFocus(idx)}
                               className="w-full px-3 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition"
@@ -861,35 +1016,47 @@ export default function AccueilERPTest() {
                             type="number"
                             min="1"
                             value={art.quantite}
-                            onChange={e => handleAchatArticleChange(idx, 'quantite', e.target.value)}
+                            onChange={e => handleAchatItemChange(idx, 'quantite', e.target.value)}
                             className="w-24 px-3 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition"
                             placeholder="Quantité"
                           />
                           {/* Depot Input */}
-                          <select
+                          <input
+                            type="text"
                             value={art.depot}
-                            onChange={e => handleAchatArticleChange(idx, 'depot', e.target.value)}
+                            onChange={e => handleAchatDepotSearchChange(idx, e.target.value)}
+                            onFocus={() => handleAchatDepotInputFocus(idx)}
                             className="w-full md:w-56 px-3 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition"
-                          >
-                            <option value="">Sélectionner un dépôt</option>
-                            {depots.map(d => (
-                              <option key={d} value={d}>{d}</option>
-                            ))}
-                          </select>
+                            placeholder="Dépôt"
+                          />
+                          {achatDepotDropdown[idx] && (achatDepotFiltered[idx]?.length ?? 0) > 0 && (
+                            <div className="absolute z-50 left-0 right-0 bg-white border border-[var(--border)] rounded-lg shadow-lg max-h-48 overflow-y-auto mt-1">
+                              {achatDepotFiltered[idx].map(d => (
+                                <button
+                                  key={d}
+                                  type="button"
+                                  className="w-full text-left px-4 py-2 hover:bg-[var(--primary)]/10"
+                                  onClick={() => handleAchatDepotSelect(idx, d)}
+                                >
+                                  {d}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                           {/* Prix Achat Input */}
                           <input
                             type="number"
                             min="0"
                             step="0.01"
                             value={art.prixAchat || ''}
-                            onChange={e => handleAchatArticleChange(idx, 'prixAchat', e.target.value)}
+                            onChange={e => handleAchatItemChange(idx, 'prixAchat', e.target.value)}
                             className="w-32 px-3 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition"
                             placeholder="Prix Achat"
                           />
-                          <button type="button" onClick={() => handleRemoveAchatArticle(idx)} className="text-[var(--danger)] hover:text-[var(--danger-dark)] text-lg font-bold px-2">&times;</button>
+                          <button type="button" onClick={() => handleRemoveAchatItem(idx)} className="text-[var(--danger)] hover:text-[var(--danger-dark)] text-lg font-bold px-2">&times;</button>
                         </div>
                       ))}
-                      <button type="button" onClick={handleAddAchatArticle} className="mt-2 px-4 py-2 bg-[var(--primary)]/5 text-[var(--primary)] rounded-lg font-semibold hover:bg-[var(--primary)]/10 transition flex items-center gap-2">
+                      <button type="button" onClick={handleAddAchatItem} className="mt-2 px-4 py-2 bg-[var(--primary)]/5 text-[var(--primary)] rounded-lg font-semibold hover:bg-[var(--primary)]/10 transition flex items-center gap-2">
                         <span>Ajouter un article</span>
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                       </button>
@@ -913,6 +1080,7 @@ export default function AccueilERPTest() {
                   <tr>
                     {columns.map((col, colIdx) => {
                       const isFiltered = filters[col] && filters[col].length > 0;
+                      const isSorted = sortColumn === col;
                       return (
                         <th
                           key={col}
@@ -926,76 +1094,86 @@ export default function AccueilERPTest() {
                             }
                           }}
                         >
-                          <span>{col}</span>
-                          <button
-                            type="button"
-                            className={`ml-2 inline-flex items-center justify-center w-5 h-5 rounded hover:bg-[var(--primary)]/20 transition filter-dropdown ${isFiltered ? 'text-[var(--primary)]' : 'text-gray-400'}`}
-                            onClick={e => { e.stopPropagation(); setFilterDropdownOpen(filterDropdownOpen === col ? null : col); setPendingFilters(filters); }}
-                            title="Filtrer"
-                          >
-                            {/* Use Heroicons FunnelIcon or inline SVG */}
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707l-6.414 6.414A2 2 0 0013 14.586V19a1 1 0 01-1.447.894l-2-1A1 1 0 019 18v-3.414a2 2 0 00-.586-1.414L2 6.707A1 1 0 012 6V4z" />
-                            </svg>
-                          </button>
-                          {filterDropdownOpen === col && (
-                            <div className="absolute z-50 right-0 sm:w-56 w-[90vw] min-w-[10rem] bg-white border border-[var(--primary)]/20 rounded-lg shadow-lg p-2 filter-dropdown">
-                              <div className="mb-2">
-                                <input
-                                  type="text"
-                                  value={filterSearch[col] || ''}
-                                  onChange={e => setFilterSearch(s => ({ ...s, [col]: e.target.value }))}
-                                  placeholder="Rechercher..."
-                                  className="w-full px-2 py-1 border border-[var(--primary)]/20 rounded text-xs bg-white/70 focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition"
-                                />
-                              </div>
-                              <div className="max-h-40 overflow-y-auto mb-2">
-                                <label className="flex items-center px-2 py-1 cursor-pointer text-xs">
-                                  <input
-                                    type="checkbox"
-                                    checked={pendingFilters[col]?.length === getUniqueColumnValues(col, filteredSortedRows, colIdx, filterSearch[col] || '').length}
-                                    onChange={e => {
-                                      if (e.target.checked) {
-                                        setPendingFilters(f => ({ ...f, [col]: getUniqueColumnValues(col, filteredSortedRows, colIdx, filterSearch[col] || '') }));
-                                      } else {
-                                        setPendingFilters(f => ({ ...f, [col]: [] }));
-                                      }
-                                    }}
-                                  />
-                                  <span className="ml-2">(Tout sélectionner)</span>
-                                </label>
-                                {getUniqueColumnValues(col, filteredSortedRows, colIdx, filterSearch[col] || '').map((val: string) => (
-                                  <label key={val} className="flex items-center px-2 py-1 cursor-pointer text-xs">
+                          <div className="flex items-center justify-between w-full">
+                            <span className="flex items-center">
+                              {col}
+                              {isSorted && (
+                                <span className="ml-1 align-middle text-[10px]">
+                                  {sortDirection === 'asc' ? '▲' : '▼'}
+                                </span>
+                              )}
+                            </span>
+                            <span className="relative">
+                              <button
+                                type="button"
+                                className={`ml-2 inline-flex items-center justify-center w-5 h-5 rounded hover:bg-[var(--primary)]/20 transition filter-dropdown ${isFiltered ? 'text-[var(--primary)]' : 'text-gray-400'}`}
+                                onClick={e => { e.stopPropagation(); setFilterDropdownOpen(filterDropdownOpen === col ? null : col); setPendingFilters(filters); }}
+                                title="Filtrer"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707l-6.414 6.414A2 2 0 0013 14.586V19a1 1 0 01-1.447.894l-2-1A1 1 0 019 18v-3.414a2 2 0 00-.586-1.414L2 6.707A1 1 0 012 6V4z" />
+                                </svg>
+                              </button>
+                              {filterDropdownOpen === col && (
+                                <div className="absolute z-50 right-0 sm:w-56 w-[90vw] min-w-[10rem] bg-white border border-[var(--primary)]/20 rounded-lg shadow-lg p-2 filter-dropdown">
+                                  <div className="mb-2">
                                     <input
-                                      type="checkbox"
-                                      checked={pendingFilters[col]?.includes(val)}
-                                      onChange={e => {
-                                        setPendingFilters(f => {
-                                          const prev = f[col] || [];
-                                          if (e.target.checked) {
-                                            return { ...f, [col]: [...prev, val] };
-                                          } else {
-                                            return { ...f, [col]: prev.filter(v => v !== val) };
-                                          }
-                                        });
-                                      }}
+                                      type="text"
+                                      value={filterSearch[col] || ''}
+                                      onChange={e => setFilterSearch(s => ({ ...s, [col]: e.target.value }))}
+                                      placeholder="Rechercher..."
+                                      className="w-full px-2 py-1 border border-[var(--primary)]/20 rounded text-xs bg-white/70 focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition"
                                     />
-                                    <span className="ml-2">{val}</span>
-                                  </label>
-                                ))}
-                              </div>
-                              <div className="flex justify-between gap-2 mt-2">
-                                <button
-                                  className="flex-1 px-2 py-1 rounded bg-[var(--primary)]/10 text-[var(--primary)] text-xs font-semibold hover:bg-[var(--primary)]/20"
-                                  onClick={() => { setFilters(pendingFilters); setFilterDropdownOpen(null); }}
-                                >OK</button>
-                                <button
-                                  className="flex-1 px-2 py-1 rounded bg-gray-100 text-gray-600 text-xs font-semibold hover:bg-gray-200"
-                                  onClick={() => { setPendingFilters(f => ({ ...f, [col]: [] })); setFilters(f => ({ ...f, [col]: [] })); setFilterDropdownOpen(null); }}
-                                >Effacer</button>
-                              </div>
-                            </div>
-                          )}
+                                  </div>
+                                  <div className="max-h-40 overflow-y-auto mb-2">
+                                    <label className="flex items-center px-2 py-1 cursor-pointer text-xs">
+                                      <input
+                                        type="checkbox"
+                                        checked={pendingFilters[col]?.length === getUniqueColumnValues(col, filteredSortedRows, colIdx, filterSearch[col] || '').length}
+                                        onChange={e => {
+                                          if (e.target.checked) {
+                                            setPendingFilters(f => ({ ...f, [col]: getUniqueColumnValues(col, filteredSortedRows, colIdx, filterSearch[col] || '') }));
+                                          } else {
+                                            setPendingFilters(f => ({ ...f, [col]: [] }));
+                                          }
+                                        }}
+                                      />
+                                      <span className="ml-2">(Tout sélectionner)</span>
+                                    </label>
+                                    {getUniqueColumnValues(col, filteredSortedRows, colIdx, filterSearch[col] || '').map((val: string) => (
+                                      <label key={val} className="flex items-center px-2 py-1 cursor-pointer text-xs">
+                                        <input
+                                          type="checkbox"
+                                          checked={pendingFilters[col]?.includes(val)}
+                                          onChange={e => {
+                                            setPendingFilters(f => {
+                                              const prev = f[col] || [];
+                                              if (e.target.checked) {
+                                                return { ...f, [col]: [...prev, val] };
+                                              } else {
+                                                return { ...f, [col]: prev.filter(v => v !== val) };
+                                              }
+                                            });
+                                          }}
+                                        />
+                                        <span className="ml-2">{val}</span>
+                                      </label>
+                                    ))}
+                                  </div>
+                                  <div className="flex justify-between gap-2 mt-2">
+                                    <button
+                                      className="flex-1 px-2 py-1 rounded bg-[var(--primary)]/10 text-[var(--primary)] text-xs font-semibold hover:bg-[var(--primary)]/20"
+                                      onClick={() => { setFilters(pendingFilters); setFilterDropdownOpen(null); }}
+                                    >OK</button>
+                                    <button
+                                      className="flex-1 px-2 py-1 rounded bg-gray-100 text-gray-600 text-xs font-semibold hover:bg-gray-200"
+                                      onClick={() => { setPendingFilters(f => ({ ...f, [col]: [] })); setFilters(f => ({ ...f, [col]: [] })); setFilterDropdownOpen(null); }}
+                                    >Effacer</button>
+                                  </div>
+                                </div>
+                              )}
+                            </span>
+                          </div>
                         </th>
                       );
                     })}
@@ -1046,6 +1224,12 @@ export default function AccueilERPTest() {
                               >
                                 Éditer
                               </button>
+                              <button
+                                className="px-2 py-1.5 sm:py-1 text-xs bg-[var(--danger)]/10 text-[var(--danger)] rounded hover:bg-[var(--danger)]/20 transition"
+                                onClick={() => handleDeleteArticle(idx)}
+                              >
+                                Supprimer
+                              </button>
                             </div>
                           </td>
                         )}
@@ -1094,6 +1278,20 @@ export default function AccueilERPTest() {
                             >
                               Supprimer
                             </button>
+                            <button
+                              className="px-2 py-1.5 sm:py-1 text-xs bg-[var(--primary)]/10 text-[var(--primary)] rounded hover:bg-[var(--primary)]/20 transition flex items-center gap-1"
+                              onClick={() => handleDownloadVentePDF(ventes[idx].id, idx)}
+                              disabled={pdfLoadingIdx === idx}
+                            >
+                              {pdfLoadingIdx === idx ? '...' : 'Télécharger'}
+                            </button>
+                            <button
+                              className="px-2 py-1.5 sm:py-1 text-xs bg-[var(--primary)]/10 text-[var(--primary)] rounded hover:bg-[var(--primary)]/20 transition flex items-center gap-1"
+                              onClick={() => handlePreviewVentePDF(ventes[idx].id, idx)}
+                              disabled={pdfLoadingIdx === idx}
+                            >
+                              {pdfLoadingIdx === idx ? '...' : 'Prévisualiser'}
+                            </button>
                           </div>
                         </td>
                       )}
@@ -1129,6 +1327,18 @@ export default function AccueilERPTest() {
             <div className="flex gap-2 justify-end">
               <button onClick={cancelDeleteStock} className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">Annuler</button>
               <button onClick={confirmDeleteStock} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Supprimer</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showDeleteArticleIdx !== null && activeMenu === "articles" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
+            <h3 className="text-lg font-bold mb-4 text-red-700">Confirmer la suppression</h3>
+            <p className="mb-6">Voulez-vous vraiment supprimer cet article ? Cette action est irréversible.</p>
+            <div className="flex gap-2 justify-end">
+              <button onClick={cancelDeleteArticle} className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">Annuler</button>
+              <button onClick={confirmDeleteArticle} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Supprimer</button>
             </div>
           </div>
         </div>

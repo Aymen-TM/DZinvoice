@@ -1,6 +1,9 @@
+import { InvoiceData } from '@/types/invoice';
+import { Vente } from '@/types/erp';
+import { getVentes as _getVentes, createVente, updateVente, deleteVente } from '@/services/ventes';
+import * as base from '@/services/localforageBase';
+import { setAll } from '@/services/localforageBase';
 import localforage from 'localforage';
-
-import type { InvoiceData } from '@/types/invoice';
 
 // Invoice Types
 export interface InvoiceItem {
@@ -23,80 +26,29 @@ export interface CompleteInvoice extends InvoiceData {
   id: string;
 }
 
-export interface Vente {
-  id: string;
-  client: string;
-  date: string;
-  montant: number;
-  prixHT: number;
-  nombreItems: number;
-  unitPrice: number;
-}
-
-// Invoice Storage
 const INVOICES_KEY = 'invoices';
-const VENTES_KEY = 'ventes';
 const COMPLETE_INVOICES_KEY = 'complete_invoices';
 
-export async function getInvoices(): Promise<Invoice[]> {
-  const invoices = await localforage.getItem<Invoice[]>(INVOICES_KEY);
-  return invoices || [];
-}
-
-export async function getInvoiceById(id: string): Promise<Invoice | null> {
-  const invoices = await getInvoices();
-  return invoices.find(inv => inv.id === id) || null;
-}
-
-// Complete invoice storage functions
-export async function getCompleteInvoices(): Promise<CompleteInvoice[]> {
-  const invoices = await localforage.getItem<CompleteInvoice[]>(COMPLETE_INVOICES_KEY);
-  return invoices || [];
-}
-
-export async function getCompleteInvoiceById(id: string): Promise<CompleteInvoice | null> {
-  const invoices = await getCompleteInvoices();
-  return invoices.find(inv => inv.id === id) || null;
-}
-
-export async function addCompleteInvoice(invoice: CompleteInvoice): Promise<void> {
-  const invoices = await getCompleteInvoices();
-  const idx = invoices.findIndex(inv => inv.id === invoice.id);
-  if (idx !== -1) {
-    invoices[idx] = invoice;
-  } else {
-    invoices.push(invoice);
-  }
-  await localforage.setItem(COMPLETE_INVOICES_KEY, invoices);
-}
-
-export async function addInvoice(invoice: Invoice): Promise<void> {
-  const invoices = await getInvoices();
-  const idx = invoices.findIndex(inv => inv.id === invoice.id);
-  if (idx !== -1) {
-    invoices[idx] = invoice;
-  } else {
-    invoices.push(invoice);
-  }
+// Modular CRUD for Invoice
+export const getInvoices = () => base.getAll<Invoice>(INVOICES_KEY);
+export const getInvoiceById = (id: string) => base.getById<Invoice>(INVOICES_KEY, id);
+export const addInvoice = async (invoice: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const invoices: Invoice[] = (await localforage.getItem(INVOICES_KEY)) || [];
+  invoices.push(invoice as Invoice);
   await localforage.setItem(INVOICES_KEY, invoices);
-}
+};
+export const updateInvoice = (id: string, data: Partial<Invoice>) => base.update<Invoice>(INVOICES_KEY, id, data);
+export const deleteInvoice = (id: string) => base.remove(INVOICES_KEY, id);
 
-export async function deleteInvoice(id: string): Promise<void> {
-  const invoices = await getInvoices();
-  const updated = invoices.filter(inv => inv.id !== id);
-  await localforage.setItem(INVOICES_KEY, updated);
-}
-
-export async function clearInvoices(): Promise<void> {
-  await localforage.removeItem(INVOICES_KEY);
-}
+// Modular CRUD for CompleteInvoice
+export const getCompleteInvoices = () => base.getAll<CompleteInvoice>(COMPLETE_INVOICES_KEY);
+export const getCompleteInvoiceById = (id: string) => base.getById<CompleteInvoice>(COMPLETE_INVOICES_KEY, id);
+export const addCompleteInvoice = (invoice: Omit<CompleteInvoice, 'id' | 'createdAt' | 'updatedAt'>) => base.create<CompleteInvoice>(COMPLETE_INVOICES_KEY, invoice);
+export const updateCompleteInvoice = (id: string, data: Partial<CompleteInvoice>) => base.update<CompleteInvoice>(COMPLETE_INVOICES_KEY, id, data);
+export const deleteCompleteInvoice = (id: string) => base.remove(COMPLETE_INVOICES_KEY, id);
 
 // Vente Storage (for invoice integration)
-export async function getVentes(): Promise<Vente[]> {
-  const ventes = await localforage.getItem<Vente[]>(VENTES_KEY);
-  return ventes || [];
-}
-
-export async function setVentes(ventes: Vente[]): Promise<void> {
-  await localforage.setItem(VENTES_KEY, ventes);
-} 
+export const getVentes = _getVentes;
+export const setVentes = async (ventes: Vente[]) => {
+  await setAll<Vente>('ventes', ventes);
+}; 

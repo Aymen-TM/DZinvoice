@@ -41,7 +41,7 @@ export default function GeneratePDFButton({ invoiceData, isEditing = false }: Ge
 
       // Save invoice to localForage
       const invoiceToSave = {
-        id: invoiceData.meta.invoiceNumber,
+        id: invoiceData.meta.invoiceNumber, // Use invoice number as ID
         clientName: invoiceData.client.clientName,
         date: invoiceData.meta.date,
         total: invoiceData.totals.montantTTC,
@@ -55,14 +55,14 @@ export default function GeneratePDFButton({ invoiceData, isEditing = false }: Ge
 
       // Save complete invoice data for editing
       const completeInvoiceData = {
-        id: invoiceData.meta.invoiceNumber,
+        id: invoiceData.meta.invoiceNumber, // Use invoice number as ID
         ...invoiceData,
       };
       await addCompleteInvoice(completeInvoiceData);
       // Update or add vente to ventes table
       const ventes = await getVentes();
       const updatedVente = {
-        id: invoiceData.meta.invoiceNumber,
+        id: invoiceData.meta.invoiceNumber, // Use invoice number as ID
         client: invoiceData.client.clientName,
         date: invoiceData.meta.date,
         montant: invoiceData.totals.montantTTC,
@@ -341,10 +341,10 @@ export default function GeneratePDFButton({ invoiceData, isEditing = false }: Ge
                 className="w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg font-semibold shadow hover:from-blue-600 hover:to-indigo-700 transition-colors"
                 onClick={() => {
                   setShowSuccessModal(false);
-                  router.push('/');
+                  router.push('/erp?tab=ventes');
                 }}
               >
-                Retour à Mes Factures
+                Retourner à l’ERP (Ventes)
               </button>
               <button
                 className="w-full px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-semibold shadow hover:from-green-600 hover:to-emerald-700 transition-colors"

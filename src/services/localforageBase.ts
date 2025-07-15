@@ -1,0 +1,40 @@
+import localforage from 'localforage';
+import { v4 as uuidv4 } from 'uuid';
+
+export async function getAll<T>(table: string): Promise<T[]> {
+  return (await localforage.getItem<T[]>(table)) || [];
+}
+
+export async function getById<T>(table: string, id: string): Promise<T | null> {
+  const all = await getAll<T>(table);
+  return all.find(item => (item as any).id === id) || null;
+}
+
+export async function create<T>(table: string, data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>): Promise<T> {
+  const now = new Date().toISOString();
+  // Use provided id if present, otherwise generate a UUID
+  const item = { ...data, id: (data as any).id || uuidv4(), createdAt: now, updatedAt: now } as T;
+  const all = await getAll<T>(table);
+  all.push(item);
+  await localforage.setItem(table, all);
+  return item;
+}
+
+export async function update<T>(table: string, id: string, data: Partial<T>): Promise<T> {
+  const all = await getAll<T>(table);
+  const idx = all.findIndex(item => (item as any).id === id);
+  if (idx === -1) throw new Error('Not found');
+  all[idx] = { ...all[idx], ...data, updatedAt: new Date().toISOString() };
+  await localforage.setItem(table, all);
+  return all[idx];
+}
+
+export async function remove(table: string, id: string): Promise<void> {
+  const all = await getAll(table);
+  const filtered = all.filter((item: any) => item.id !== id);
+  await localforage.setItem(table, filtered);
+}
+
+export async function setAll<T>(table: string, items: T[]): Promise<void> {
+  await localforage.setItem(table, items);
+} 

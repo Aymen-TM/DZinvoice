@@ -28,8 +28,15 @@ export async function generateNextInvoiceNumber(): Promise<string> {
   if (invoiceNumbers.length === 0) {
     return '1';
   }
-  const maxNumber = Math.max(...invoiceNumbers);
-  const nextNumber = maxNumber + 1;
+  invoiceNumbers.sort((a, b) => a - b);
+  // Find the smallest missing positive integer
+  let nextNumber = 1;
+  for (let i = 0; i < invoiceNumbers.length; i++) {
+    if (invoiceNumbers[i] !== nextNumber) {
+      break;
+    }
+    nextNumber++;
+  }
   return nextNumber.toString();
 }
 

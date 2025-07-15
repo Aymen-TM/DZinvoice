@@ -170,14 +170,14 @@ export default function CompanyInfo({ company, onCompanyChange }: CompanyInfoPro
             Activité
           </label>
           <div className="relative">
-            <input
-              type="text"
+          <input
+            type="text"
               value={activiteInput}
               onChange={(e) => handleActiviteInput(e.target.value)}
               onFocus={() => activiteInput.length > 1 && setShowActiviteSuggestions(true)}
               onBlur={() => setTimeout(() => setShowActiviteSuggestions(false), 100)}
-              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm hover:bg-white/70 focus:bg-white/90 group-hover/item:border-blue-300 text-sm sm:text-base"
-              placeholder="Activité"
+            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm hover:bg-white/70 focus:bg-white/90 group-hover/item:border-blue-300 text-sm sm:text-base"
+            placeholder="Activité"
               autoComplete="off"
               onKeyDown={handleActiviteKeyDown}
             />
@@ -217,14 +217,14 @@ export default function CompanyInfo({ company, onCompanyChange }: CompanyInfoPro
             Capital
           </label>
           <div className="relative">
-            <input
-              type="text"
+          <input
+            type="text"
               value={capitalDisplay}
-              onChange={(e) => handleChange('capital', e.target.value)}
+            onChange={(e) => handleChange('capital', e.target.value)}
               className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm hover:bg-white/70 focus:bg-white/90 group-hover/item:border-blue-300 text-sm sm:text-base pr-12"
-              placeholder="Capital"
+            placeholder="Capital"
               inputMode="numeric"
-            />
+          />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">DA</span>
           </div>
         </div>
