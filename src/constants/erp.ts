@@ -26,6 +26,7 @@ export const DEFAULT_CLIENT_FORM = {
 };
 
 export const DEFAULT_ARTICLE_FORM = {
+  id: '',
   ref: "",
   designation: "",
   qte: 0,

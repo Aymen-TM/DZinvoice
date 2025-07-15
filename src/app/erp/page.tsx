@@ -24,16 +24,10 @@ const TOOLBAR_BUTTONS = [
 
 const emptyClient: Omit<Client, "id"> = DEFAULT_CLIENT_FORM;
 
-const emptyArticle: Article = DEFAULT_ARTICLE_FORM;
+const emptyArticle: Article = { ...DEFAULT_ARTICLE_FORM, id: '' };
 
 const emptyAchat: Omit<Achat, 'id'> = DEFAULT_ACHAT_FORM;
-const emptyAchatArticle: AchatArticle = {
-  ref: '',
-  designation: '',
-  quantite: 1,
-  depot: '',
-  prixAchat: 0,
-};
+const emptyAchatArticle: AchatArticle = { id: '', ref: '', designation: '', quantite: 1, depot: '', prixAchat: 0 };
 
 type ToolbarButton = { key: string; label: string; onClick?: () => void };
 
@@ -84,12 +78,20 @@ export default function AccueilERPTest() {
 
   const [pdfLoadingIdx, setPdfLoadingIdx] = useState<number | null>(null);
 
+  // Add missing state for search/autocomplete and error
+  const [achatArticleRefSearch, setAchatArticleRefSearch] = useState<string[]>([]);
+  const [achatArticleDesSearch, setAchatArticleDesSearch] = useState<string[]>([]);
+  const [achatDepotSearch, setAchatDepotSearch] = useState<string[]>([]);
+  const [achatError, setAchatError] = useState<string>("");
+
   // Sync arrays with achatForm.articles length
   useEffect(() => {
     setAchatArticleRefDropdown((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? false));
     setAchatArticleRefFiltered((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? articles));
     setAchatArticleDesDropdown((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? false));
     setAchatArticleDesFiltered((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? articles));
+    setAchatArticleRefSearch((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? ""));
+    setAchatArticleDesSearch((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? ""));
     achatArticleRefInputRefs.current = achatForm.articles.map((_, idx) => achatArticleRefInputRefs.current[idx] ?? null);
     achatArticleDesInputRefs.current = achatForm.articles.map((_, idx) => achatArticleDesInputRefs.current[idx] ?? null);
   }, [achatForm.articles.length, achatForm.articles, articles]);
@@ -98,6 +100,7 @@ export default function AccueilERPTest() {
   useEffect(() => {
     setAchatDepotDropdown((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? false));
     setAchatDepotFiltered((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? depots));
+    setAchatDepotSearch((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? ""));
   }, [achatForm.articles.length, achatForm.articles, depots]);
 
   // Load depots from stock on mount
@@ -137,7 +140,7 @@ export default function AccueilERPTest() {
     handleAchatItemChange(idx, 'ref', a.ref);
     handleAchatItemChange(idx, 'designation', a.designation);
     handleAchatItemChange(idx, 'prixAchat', a.prixAchat || 0);
-    setAchatArticleRefDropdown((prev) => prev.map((v, i) => (i === idx ? a.ref : v)));
+    setAchatArticleRefSearch((prev) => prev.map((v, i) => (i === idx ? a.ref : v)));
     setAchatArticleDesSearch((prev) => prev.map((v, i) => (i === idx ? a.designation : v)));
     setAchatArticleRefDropdown((prev) => prev.map((v, i) => (i === idx ? false : v)));
     setAchatArticleDesDropdown((prev) => prev.map((v, i) => (i === idx ? false : v)));
@@ -298,7 +301,7 @@ export default function AccueilERPTest() {
       setEditArticleIdx(null);
     } else {
       // Add mode
-      await saveArticles([...articles, { ...articleForm }]);
+      await saveArticles([...articles, { ...articleForm, id: Date.now().toString() }]);
     }
     setArticleForm(emptyArticle);
     setShowArticleForm(false);
@@ -351,7 +354,13 @@ export default function AccueilERPTest() {
   };
 
   const handleAddAchatItem = () => {
-    setAchatForm((prev) => ({ ...prev, articles: [...prev.articles, { ...emptyAchatArticle }] }));
+    setAchatForm((prev) => ({
+      ...prev,
+      articles: [
+        ...prev.articles,
+        { ...emptyAchatArticle, id: Date.now().toString() + Math.random() }
+      ]
+    }));
   };
 
   const handleRemoveAchatItem = (idx: number) => {
@@ -386,7 +395,7 @@ export default function AccueilERPTest() {
       setEditAchatIdx(null);
     } else {
       // Add mode
-      newAchats = [...achats, { ...achatForm, id: Date.now(), articles: achatForm.articles }];
+      newAchats = [...achats, { ...achatForm, id: Date.now().toString(), articles: achatForm.articles }];
       await saveAchats(newAchats);
     }
     // Update stock for each article in achat
@@ -397,6 +406,7 @@ export default function AccueilERPTest() {
         newStock[idx] = { ...newStock[idx], quantite: newStock[idx].quantite + art.quantite };
       } else {
         newStock.push({
+          id: Date.now().toString() + Math.random(),
           ref: art.ref,
           designation: art.designation,
           depot: art.depot,
