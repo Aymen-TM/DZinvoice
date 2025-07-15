@@ -5,13 +5,11 @@ import { StockItem } from '@/types/erp';
 import { Vente } from '@/types/erp';
 import {
   getClients as _getClients,
-  createClient,
   updateClient,
   deleteClient
 } from '@/services/clients';
 import {
   getArticles as _getArticles,
-  createArticle,
   updateArticle,
   deleteArticle
 } from '@/services/articles';

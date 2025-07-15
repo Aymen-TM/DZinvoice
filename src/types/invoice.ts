@@ -52,6 +52,7 @@ export interface Totals {
 }
 
 export interface InvoiceData {
+  id: string;
   company: Company;
   client: Client;
   meta: InvoiceMeta;

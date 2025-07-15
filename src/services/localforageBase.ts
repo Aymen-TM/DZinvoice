@@ -1,16 +1,16 @@
 import localforage from 'localforage';
 import { v4 as uuidv4 } from 'uuid';
 
-export async function getAll<T>(table: string): Promise<T[]> {
+export async function getAll<T extends {id: string}>(table: string): Promise<T[]> {
   return (await localforage.getItem<T[]>(table)) || [];
 }
 
-export async function getById<T>(table: string, id: string): Promise<T | null> {
+export async function getById<T extends {id: string}>(table: string, id: string): Promise<T | null> {
   const all = await getAll<T>(table);
-  return all.find(item => (item as {id: string}).id === id) || null;
+  return all.find(item => item.id === id) || null;
 }
 
-export async function create<T>(table: string, data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>): Promise<T> {
+export async function create<T extends {id: string}>(table: string, data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>): Promise<T> {
   const now = new Date().toISOString();
   // Use provided id if present, otherwise generate a UUID
   const item = { ...data, id: (data as {id: string}).id || uuidv4(), createdAt: now, updatedAt: now } as T;
@@ -20,9 +20,9 @@ export async function create<T>(table: string, data: Omit<T, 'id' | 'createdAt' 
   return item;
 }
 
-export async function update<T>(table: string, id: string, data: Partial<T>): Promise<T> {
+export async function update<T extends {id: string}>(table: string, id: string, data: Partial<T>): Promise<T> {
   const all = await getAll<T>(table);
-  const idx = all.findIndex(item => (item as {id: string}).id === id);
+  const idx = all.findIndex(item => item.id === id);
   if (idx === -1) throw new Error('Not found');
   all[idx] = { ...all[idx], ...data, updatedAt: new Date().toISOString() };
   await localforage.setItem(table, all);
@@ -35,6 +35,6 @@ export async function remove(table: string, id: string): Promise<void> {
   await localforage.setItem(table, filtered);
 }
 
-export async function setAll<T>(table: string, items: T[]): Promise<void> {
+export async function setAll<T extends {id: string}>(table: string, items: T[]): Promise<void> {
   await localforage.setItem(table, items);
 } 

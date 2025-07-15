@@ -16,6 +16,7 @@ export interface Client {
 }
 
 export interface Article {
+  id: string;
   ref: string;
   designation: string;
   qte: number;
@@ -24,6 +25,7 @@ export interface Article {
 }
 
 export interface AchatArticle {
+  id: string;
   ref: string;
   designation: string;
   quantite: number;
@@ -32,7 +34,7 @@ export interface AchatArticle {
 }
 
 export interface Achat {
-  id: number;
+  id: string;
   fournisseur: string;
   date: string;
   montant: number;
@@ -40,6 +42,7 @@ export interface Achat {
 }
 
 export interface StockItem {
+  id: string;
   ref: string;
   designation: string;
   depot: string;
