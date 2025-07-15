@@ -86,7 +86,7 @@ export default function AccueilERPTest() {
     setAchatArticleDesFiltered((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? articles));
     achatArticleRefInputRefs.current = achatForm.articles.map((_, idx) => achatArticleRefInputRefs.current[idx] ?? null);
     achatArticleDesInputRefs.current = achatForm.articles.map((_, idx) => achatArticleDesInputRefs.current[idx] ?? null);
-  }, [achatForm.articles.length, articles]);
+  }, [achatForm.articles.length, achatForm.articles, articles]);
 
   // Load depots from stock on mount
   useEffect(() => {
@@ -441,7 +441,7 @@ export default function AccueilERPTest() {
   };
 
   // Sorting and filtering logic
-  function applyFiltersAndSorting(columns: string[], rows: any[][]) {
+  function applyFiltersAndSorting(columns: string[], rows: string[][]) {
     // Filtering
     let filteredRows = rows.filter(row =>
       columns.every((col, i) => {
@@ -470,7 +470,7 @@ export default function AccueilERPTest() {
   }
 
   // Helper to get unique values for a column, filtered by search
-  function getUniqueColumnValues(col: string, rows: any[][], colIdx: number, search: string) {
+  function getUniqueColumnValues(col: string, rows: string[][], colIdx: number, search: string) {
     let values = Array.from(new Set(rows.map(row => row[colIdx])));
     if (search) {
       values = values.filter(v => String(v).toLowerCase().includes(search.toLowerCase()));
@@ -484,34 +484,62 @@ export default function AccueilERPTest() {
       case "tiers":
         return {
           columns: ["Code Tiers", "Raison Sociale", "Famille", "Activité", "Adresse", "Ville", "RC", "NIF", "NIS", "AI"],
-          rows: clients.map((c) => [c.codeTiers, c.raisonSocial, c.famille, c.activite, c.adresse, c.ville, c.rc, c.nif, c.nis, c.ai]),
+          rows: clients.map((c) => [
+            c.codeTiers,
+            c.raisonSocial,
+            c.famille,
+            c.activite,
+            c.adresse,
+            c.ville,
+            c.rc,
+            c.nif,
+            c.nis,
+            c.ai
+          ]),
         };
       case "articles":
         return {
           columns: ["Référence", "Désignation", "Prix Vente HT"],
-          rows: articles.map((a) => [a.ref, a.designation, a.prixVente + " DA"]),
+          rows: articles.map((a) => [
+            a.ref,
+            a.designation,
+            a.prixVente.toString() + " DA"
+          ]),
         };
       case "achat":
         return {
           columns: ["ID", "Fournisseur", "Date", "Montant"],
-          rows: achats.map((a) => [a.id, a.fournisseur, a.date, a.montant + " DA"]),
+          rows: achats.map((a) => [
+            a.id.toString(),
+            a.fournisseur,
+            a.date,
+            a.montant.toString() + " DA"
+          ]),
         };
       case "stock":
         return {
           columns: ["Référence", "Désignation", "Dépôt", "Quantité"],
-          rows: stock.map(s => [s.ref, s.designation, s.depot, s.quantite]),
+          rows: stock.map(s => [
+            s.ref,
+            s.designation,
+            s.depot,
+            s.quantite.toString()
+          ]),
         };
       case "ventes":
-        console.log("Ventes data:", ventes);
         return {
           columns: ["Date", "Numéro Facture", "Prix H.T", "Montant Total HT", "Montant Total TTC"],
           rows: ventes.map((v) => {
-            console.log("Processing vente:", v);
             const prixHT = v.prixHT || 0;
             const montant = v.montant || 0;
             const unitPrice = v.unitPrice || 0;
-            console.log("Calculated values:", { prixHT, montant, unitPrice });
-            return [v.date, v.id, unitPrice + " DA", prixHT + " DA", montant + " DA"];
+            return [
+              v.date,
+              v.id,
+              unitPrice.toString() + " DA",
+              prixHT.toString() + " DA",
+              montant.toString() + " DA"
+            ];
           }),
         };
       default:
@@ -557,7 +585,7 @@ export default function AccueilERPTest() {
       setAchatsState(await getAchats());
       setStockState(await getStock());
       setVentesState(await getVentes());
-    } catch (e) {
+    } catch {
       alert('Erreur lors de l\'importation du fichier.');
     }
   };
@@ -936,7 +964,7 @@ export default function AccueilERPTest() {
                                   />
                                   <span className="ml-2">(Tout sélectionner)</span>
                                 </label>
-                                {getUniqueColumnValues(col, filteredSortedRows, colIdx, filterSearch[col] || '').map((val: any) => (
+                                {getUniqueColumnValues(col, filteredSortedRows, colIdx, filterSearch[col] || '').map((val: string) => (
                                   <label key={val} className="flex items-center px-2 py-1 cursor-pointer text-xs">
                                     <input
                                       type="checkbox"
