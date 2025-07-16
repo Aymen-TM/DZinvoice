@@ -78,20 +78,12 @@ export default function AccueilERPTest() {
 
   const [pdfLoadingIdx, setPdfLoadingIdx] = useState<number | null>(null);
 
-  // Add missing state for search/autocomplete and error
-  const [achatArticleRefSearch, setAchatArticleRefSearch] = useState<string[]>([]);
-  const [achatArticleDesSearch, setAchatArticleDesSearch] = useState<string[]>([]);
-  const [achatDepotSearch, setAchatDepotSearch] = useState<string[]>([]);
-  const [achatError, setAchatError] = useState<string>("");
-
   // Sync arrays with achatForm.articles length
   useEffect(() => {
     setAchatArticleRefDropdown((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? false));
     setAchatArticleRefFiltered((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? articles));
     setAchatArticleDesDropdown((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? false));
     setAchatArticleDesFiltered((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? articles));
-    setAchatArticleRefSearch((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? ""));
-    setAchatArticleDesSearch((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? ""));
     achatArticleRefInputRefs.current = achatForm.articles.map((_, idx) => achatArticleRefInputRefs.current[idx] ?? null);
     achatArticleDesInputRefs.current = achatForm.articles.map((_, idx) => achatArticleDesInputRefs.current[idx] ?? null);
   }, [achatForm.articles.length, achatForm.articles, articles]);
@@ -100,7 +92,6 @@ export default function AccueilERPTest() {
   useEffect(() => {
     setAchatDepotDropdown((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? false));
     setAchatDepotFiltered((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? depots));
-    setAchatDepotSearch((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? ""));
   }, [achatForm.articles.length, achatForm.articles, depots]);
 
   // Load depots from stock on mount
@@ -140,8 +131,8 @@ export default function AccueilERPTest() {
     handleAchatItemChange(idx, 'ref', a.ref);
     handleAchatItemChange(idx, 'designation', a.designation);
     handleAchatItemChange(idx, 'prixAchat', a.prixAchat || 0);
-    setAchatArticleRefSearch((prev) => prev.map((v, i) => (i === idx ? a.ref : v)));
-    setAchatArticleDesSearch((prev) => prev.map((v, i) => (i === idx ? a.designation : v)));
+    //setAchatArticleRefSearch((prev) => prev.map((v, i) => (i === idx ? a.ref : v)));
+    //setAchatArticleDesSearch((prev) => prev.map((v, i) => (i === idx ? a.designation : v)));
     setAchatArticleRefDropdown((prev) => prev.map((v, i) => (i === idx ? false : v)));
     setAchatArticleDesDropdown((prev) => prev.map((v, i) => (i === idx ? false : v)));
   };
@@ -151,7 +142,7 @@ export default function AccueilERPTest() {
 
   // Handlers for designation field
   const handleAchatArticleDesSearchChange = (idx: number, value: string) => {
-    setAchatArticleDesSearch((prev) => prev.map((v, i) => (i === idx ? value : v)));
+    //setAchatArticleDesSearch((prev) => prev.map((v, i) => (i === idx ? value : v)));
     setAchatArticleDesDropdown((prev) => prev.map((v, i) => (i === idx ? true : v)));
     setAchatArticleDesFiltered((prev) =>
       prev.map((arr, i) =>
@@ -166,8 +157,8 @@ export default function AccueilERPTest() {
     handleAchatItemChange(idx, 'ref', a.ref);
     handleAchatItemChange(idx, 'designation', a.designation);
     handleAchatItemChange(idx, 'prixAchat', a.prixAchat || 0);
-    setAchatArticleRefSearch((prev) => prev.map((v, i) => (i === idx ? a.ref : v)));
-    setAchatArticleDesSearch((prev) => prev.map((v, i) => (i === idx ? a.designation : v)));
+    //setAchatArticleRefSearch((prev) => prev.map((v, i) => (i === idx ? a.ref : v)));
+    //setAchatArticleDesSearch((prev) => prev.map((v, i) => (i === idx ? a.designation : v)));
     setAchatArticleRefDropdown((prev) => prev.map((v, i) => (i === idx ? false : v)));
     setAchatArticleDesDropdown((prev) => prev.map((v, i) => (i === idx ? false : v)));
   };
@@ -375,18 +366,18 @@ export default function AccueilERPTest() {
   const handleAchatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!achatForm.fournisseur.trim() || !achatForm.date.trim()) {
-      setAchatError('Fournisseur et date sont obligatoires.');
+      //setAchatError('Fournisseur et date sont obligatoires.');
       return;
     }
     if (achatForm.articles.length === 0) {
-      setAchatError('Ajoutez au moins un article.');
+      //setAchatError('Ajoutez au moins un article.');
       return;
     }
     if (achatForm.articles.some(art => !art.ref || !art.designation || !art.depot || !art.quantite)) {
-      setAchatError('Tous les champs des articles sont obligatoires.');
+      //setAchatError('Tous les champs des articles sont obligatoires.');
       return;
     }
-    setAchatError("");
+    //setAchatError("");
     let newAchats;
     if (editAchatIdx !== null) {
       // Edit mode
@@ -425,14 +416,14 @@ export default function AccueilERPTest() {
     setAchatForm({ ...a, articles: a.articles.map(art => ({ ...art })) });
     setEditAchatIdx(idx);
     setShowAchatForm(true);
-    setAchatError("");
+    //setAchatError("");
   };
 
   const handleAchatCancel = () => {
     setAchatForm({ ...emptyAchat, articles: [] });
     setShowAchatForm(false);
     setEditAchatIdx(null);
-    setAchatError("");
+    //setAchatError("");
   };
 
   // Add handler for deleting achat
@@ -696,7 +687,7 @@ export default function AccueilERPTest() {
     : TOOLBAR_BUTTONS;
 
   const handleAchatDepotSearchChange = (idx: number, value: string) => {
-    setAchatDepotSearch((prev) => prev.map((v, i) => (i === idx ? value : v)));
+    //setAchatDepotSearch((prev) => prev.map((v, i) => (i === idx ? value : v)));
     setAchatDepotDropdown((prev) => prev.map((v, i) => (i === idx ? true : v)));
     setAchatDepotFiltered((prev) =>
       prev.map((arr, i) =>
@@ -710,7 +701,7 @@ export default function AccueilERPTest() {
 
   const handleAchatDepotSelect = (idx: number, depot: string) => {
     handleAchatItemChange(idx, 'depot', depot);
-    setAchatDepotSearch((prev) => prev.map((v, i) => (i === idx ? depot : v)));
+   //setAchatDepotSearch((prev) => prev.map((v, i) => (i === idx ? depot : v)));
     setAchatDepotDropdown((prev) => prev.map((v, i) => (i === idx ? false : v)));
   };
 
