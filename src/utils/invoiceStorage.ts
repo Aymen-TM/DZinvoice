@@ -1,6 +1,6 @@
 import { InvoiceData } from '@/types/invoice';
 import { Vente } from '@/types/erp';
-import { getVentes as _getVentes, createVente, updateVente, deleteVente } from '@/services/ventes';
+import { getVentes as _getVentes } from '@/services/ventes';
 import * as base from '@/services/localforageBase';
 import { setAll } from '@/services/localforageBase';
 import localforage from 'localforage';

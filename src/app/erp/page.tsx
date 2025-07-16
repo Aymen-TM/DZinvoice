@@ -728,6 +728,7 @@ export default function AccueilERPTest() {
       URL.revokeObjectURL(url);
     } catch (e) {
       alert('Erreur lors du téléchargement du PDF.');
+      alert(e)
     } finally {
       setPdfLoadingIdx(null);
     }
@@ -749,6 +750,7 @@ export default function AccueilERPTest() {
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (e) {
       alert('Erreur lors de la prévisualisation du PDF.');
+      alert(e)
     } finally {
       setPdfLoadingIdx(null);
     }
