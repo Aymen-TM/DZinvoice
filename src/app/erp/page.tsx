@@ -423,7 +423,7 @@ function AccueilERPTest() {
       return;
     }
     setClientError("");
-    const formToSave = { ...clientForm };
+    let formToSave = { ...clientForm };
     const allCodes = clients.map(c => c.codeTiers);
     if (!formToSave.codeTiers || allCodes.includes(formToSave.codeTiers)) {
       formToSave.codeTiers = generateUniqueCLCode(allCodes);
@@ -815,6 +815,7 @@ function AccueilERPTest() {
         setVisibleColumns(columns); // fallback to all columns
       }
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeMenu, columns]);
 
   // Save visibleColumns to localForage when it changes
@@ -988,7 +989,7 @@ function AccueilERPTest() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--background)] flex flex-col pt-16 font-sans md:px-4 ipad:px-6">
+    <div className="min-h-screen bg-[var(--background)] flex flex-col pt-16 font-sans ipad:px-4">
       {/* Top Menu Bar */}
       <nav className="w-full bg-[var(--card)] shadow z-30 flex flex-col sm:flex-row items-center h-auto sm:h-16 px-3 sm:px-8 ipad:px-6 border-b border-[var(--border)] sticky top-0">
         <div className="flex flex-wrap gap-1 sm:gap-6 w-full justify-between items-center py-3 sm:py-0">
@@ -1057,15 +1058,15 @@ function AccueilERPTest() {
       </div>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-3 sm:p-8 md:p-2 ipad:p-0 pt-4 sm:pt-10 overflow-x-auto ipad:items-stretch ipad:justify-start">
-        <div className="bg-[var(--card)] rounded-2xl shadow-lg border border-[var(--border)] p-3 sm:p-8 md:p-2 ipad:p-0 md:max-w-none md:w-full md:mx-0 ipad:max-w-none ipad:w-full ipad:mx-0">
-          <div className="flex items-center justify-between mb-6 ipad:flex-col ipad:items-start ipad:gap-2 md:flex-col md:items-start md:gap-2">
-            <h2 className="text-lg sm:text-2xl md:text-lg ipad:text-lg font-bold text-[var(--primary-dark)] tracking-tight">
+      <main className="flex-1 p-3 sm:p-8 ipad:p-0 pt-4 sm:pt-10 overflow-x-auto ipad:items-stretch ipad:justify-start">
+        <div className="bg-[var(--card)] rounded-2xl shadow-lg border border-[var(--border)] p-3 sm:p-8 ipad:p-0 ipad:max-w-none ipad:w-full ipad:mx-0">
+          <div className="flex items-center justify-between mb-6 ipad:flex-col ipad:items-start ipad:gap-2">
+            <h2 className="text-lg sm:text-2xl ipad:text-lg font-bold text-[var(--primary-dark)] tracking-tight">
               {ERP_MENU_ITEMS.find((m) => m.key === activeMenu)?.label}
             </h2>
             <button
               type="button"
-              className="ml-2 inline-flex items-center justify-center w-8 h-8 rounded hover:bg-[var(--primary)]/20 transition text-[var(--primary-dark)] border border-[var(--border)] ipad:ml-0 ipad:px-4 ipad:py-2 md:ml-0 md:px-3 md:py-2"
+              className="ml-2 inline-flex items-center justify-center w-8 h-8 rounded hover:bg-[var(--primary)]/20 transition text-[var(--primary-dark)] border border-[var(--border)] ipad:ml-0 ipad:px-4 ipad:py-2"
               onClick={() => setColumnDropdownOpen((open) => !open)}
               title="Afficher/Masquer les colonnes"
             >
@@ -1499,9 +1500,9 @@ function AccueilERPTest() {
           )}
           {/* --- TABLE --- */}
           {/* Responsive table wrapper */}
-          <div className="overflow-x-auto w-full mt-4 rounded-2xl border-2 border-[var(--primary)]/30 shadow-xl ipad:rounded-xl ipad:border ipad:mt-2 md:rounded-xl md:border md:mt-2">
+          <div className="overflow-x-auto w-full mt-4 rounded-2xl border-2 border-[var(--primary)]/30 shadow-xl ipad:rounded-xl ipad:border ipad:mt-2">
             <div className="min-w-full overflow-visible">
-              <table className="w-full text-xs sm:text-sm md:text-base ipad:text-base rounded-2xl overflow-visible border-separate border-spacing-0">
+              <table className="w-full text-xs sm:text-sm ipad:text-base rounded-2xl overflow-visible border-separate border-spacing-0">
                 <thead className="bg-gradient-to-r from-[var(--primary)]/20 to-[var(--primary)]/10 border-b-2 border-[var(--primary)]/30 sticky top-0 z-20">
                   <tr>
                     {columns.map((col, colIdx) =>
