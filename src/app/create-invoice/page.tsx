@@ -106,7 +106,7 @@ function CreateInvoiceContent() {
     (async () => {
       if (!company.companyName || !company.rc) return;
       const erpClients: ERPClient[] = await getERPClients();
-      let beneficiary = erpClients.find(c => c.famille === 'Bénéficiaire du logiciel');
+      const beneficiary = erpClients.find(c => c.famille === 'Bénéficiaire du logiciel');
       if (!beneficiary) {
         // Add new beneficiary client
         const newClient: ERPClient = {

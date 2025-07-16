@@ -423,7 +423,7 @@ function AccueilERPTest() {
       return;
     }
     setClientError("");
-    let formToSave = { ...clientForm };
+    const formToSave = { ...clientForm };
     const allCodes = clients.map(c => c.codeTiers);
     if (!formToSave.codeTiers || allCodes.includes(formToSave.codeTiers)) {
       formToSave.codeTiers = generateUniqueCLCode(allCodes);
