@@ -5,31 +5,31 @@ import { StockItem } from '@/types/erp';
 import { Vente } from '@/types/erp';
 import {
   getClients as _getClients,
-  updateClient,
-  deleteClient
+  //updateClient,
+ // deleteClient
 } from '@/services/clients';
 import {
   getArticles as _getArticles,
-  updateArticle,
-  deleteArticle
+  //updateArticle,
+  //deleteArticle
 } from '@/services/articles';
 import {
   getAchats as _getAchats,
-  createAchat,
-  updateAchat,
-  deleteAchat
+ // createAchat,
+  //updateAchat,
+ //deleteAchat
 } from '@/services/achats';
 import {
   getStockItems as _getStockItems,
-  createStockItem,
-  updateStockItem,
-  deleteStockItem
+ // createStockItem,
+  //updateStockItem,
+ // deleteStockItem
 } from '@/services/stock_items';
 import {
   getVentes as _getVentes,
-  createVente,
-  updateVente,
-  deleteVente
+ // createVente,
+ // updateVente,
+ // deleteVente
 } from '@/services/ventes';
 import { setAll } from '@/services/localforageBase';
 
