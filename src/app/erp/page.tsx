@@ -79,6 +79,74 @@ function AccueilERPTest() {
 
   const [pdfLoadingIdx, setPdfLoadingIdx] = useState<number | null>(null);
 
+  // Add at the top level of AccueilERPTest, after other useState hooks
+  const [clientActiviteOptions, setClientActiviteOptions] = useState<{ CODE: string; LIBELLE: string }[]>([]);
+  const [clientActiviteInput, setClientActiviteInput] = useState("");
+  const [clientActiviteSuggestions, setClientActiviteSuggestions] = useState<{ CODE: string; LIBELLE: string }[]>([]);
+  const [showClientActiviteSuggestions, setShowClientActiviteSuggestions] = useState(false);
+  const [clientActiviteHighlighted, setClientActiviteHighlighted] = useState(-1);
+  const clientActiviteRefs = useRef<(HTMLLIElement | null)[]>([]);
+
+  useEffect(() => {
+    fetch('/codes_nomenclature.json')
+      .then(res => res.json())
+      .then(data => setClientActiviteOptions(data));
+  }, []);
+
+  useEffect(() => {
+    setClientActiviteInput(clientForm.activite || "");
+  }, [clientForm.activite, showClientForm]);
+
+  useEffect(() => {
+    if (
+      clientActiviteHighlighted >= 0 &&
+      clientActiviteHighlighted < clientActiviteSuggestions.length &&
+      clientActiviteRefs.current[clientActiviteHighlighted]
+    ) {
+      clientActiviteRefs.current[clientActiviteHighlighted]?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [clientActiviteHighlighted, clientActiviteSuggestions]);
+
+  const handleClientActiviteInput = (value: string) => {
+    setClientActiviteInput(value);
+    setClientForm((prev) => ({ ...prev, activite: value }));
+    if (value.length > 1) {
+      const suggestions = clientActiviteOptions.filter(opt =>
+        opt.LIBELLE.toLowerCase().includes(value.toLowerCase()) ||
+        opt.CODE.includes(value)
+      ).slice(0, 10);
+      setClientActiviteSuggestions(suggestions);
+      setShowClientActiviteSuggestions(true);
+      setClientActiviteHighlighted(-1);
+    } else {
+      setShowClientActiviteSuggestions(false);
+      setClientActiviteHighlighted(-1);
+    }
+  };
+
+  const handleClientActiviteKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showClientActiviteSuggestions || clientActiviteSuggestions.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setClientActiviteHighlighted(h => Math.min(h + 1, clientActiviteSuggestions.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setClientActiviteHighlighted(h => Math.max(h - 1, 0));
+    } else if (e.key === 'Enter') {
+      if (clientActiviteHighlighted >= 0 && clientActiviteHighlighted < clientActiviteSuggestions.length) {
+        handleClientActiviteSelect(clientActiviteSuggestions[clientActiviteHighlighted].LIBELLE);
+      }
+    } else if (e.key === 'Escape') {
+      setShowClientActiviteSuggestions(false);
+    }
+  };
+
+  const handleClientActiviteSelect = (libelle: string) => {
+    setClientActiviteInput(libelle);
+    setClientForm((prev) => ({ ...prev, activite: libelle }));
+    setShowClientActiviteSuggestions(false);
+  };
+
   // Sync arrays with achatForm.articles length
   useEffect(() => {
     setAchatArticleRefDropdown((prev) => achatForm.articles.map((_, idx) => prev[idx] ?? false));
@@ -857,7 +925,35 @@ function AccueilERPTest() {
                   </div>
                   <div>
                     <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">Activité</label>
-                    <input name="activite" value={clientForm.activite} onChange={handleClientChange} className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm" placeholder="Activité" />
+                    <div className="relative">
+                      <input
+                        name="activite"
+                        type="text"
+                        value={clientActiviteInput}
+                        onChange={e => handleClientActiviteInput(e.target.value)}
+                        onFocus={() => clientActiviteInput.length > 1 && setShowClientActiviteSuggestions(true)}
+                        onBlur={() => setTimeout(() => setShowClientActiviteSuggestions(false), 100)}
+                        className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm"
+                        placeholder="Activité"
+                        autoComplete="off"
+                        onKeyDown={handleClientActiviteKeyDown}
+                      />
+                      {showClientActiviteSuggestions && clientActiviteSuggestions.length > 0 && (
+                        <ul className="absolute z-10 left-0 right-0 bg-white border border-[var(--primary)]/30 rounded-xl mt-1 max-h-56 overflow-y-auto shadow-lg">
+                          {clientActiviteSuggestions.map((opt, idx) => (
+                            <li
+                              key={opt.CODE}
+                              ref={el => { clientActiviteRefs.current[idx] = el; }}
+                              className={`px-4 py-2 cursor-pointer text-sm ${idx === clientActiviteHighlighted ? 'bg-blue-100 font-semibold' : 'hover:bg-blue-100'}`}
+                              onMouseDown={() => handleClientActiviteSelect(opt.LIBELLE)}
+                            >
+                              <span className="font-mono text-gray-500 mr-2">{opt.CODE}</span>
+                              {opt.LIBELLE}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   </div>
                   <div className="sm:col-span-2">
                     <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">Adresse</label>
