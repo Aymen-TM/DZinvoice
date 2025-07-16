@@ -13,6 +13,10 @@ export interface Client {
   nif: string;
   nis: string;
   ai: string;
+  capital?: string;
+  email?: string;
+  telephone?: string;
+  web?: string;
 }
 
 export interface Article {

@@ -10,6 +10,8 @@ import ItemsList from '@/components/ItemsList';
 import GeneratePDFButton from '@/components/GeneratePDFButton';
 import { generateNextInvoiceNumber } from '@/utils/invoiceNumberGenerator';
 import { getCompleteInvoiceById } from '@/utils/invoiceStorage';
+import { getClients as getERPClients, setClients as setERPClients } from '@/utils/erpStorage';
+import type { Client as ERPClient } from '@/types/erp';
 
 function CreateInvoiceContent() {
   const searchParams = useSearchParams();
@@ -74,6 +76,75 @@ function CreateInvoiceContent() {
       }
     })();
   }, [isEditing, editInvoiceId]);
+
+  // On mount, try to load beneficiary client and prefill company info
+  useEffect(() => {
+    (async () => {
+      const erpClients: ERPClient[] = await getERPClients();
+      const beneficiary = erpClients.find(c => c.famille === 'Bénéficiaire du logiciel');
+      if (beneficiary) {
+        setCompany({
+          companyName: beneficiary.raisonSocial,
+          activity: beneficiary.activite,
+          address: beneficiary.adresse,
+          capital: '',
+          phone: '',
+          email: '',
+          web: '',
+          bank: '',
+          rc: beneficiary.rc,
+          nif: beneficiary.nif,
+          ai: beneficiary.ai,
+          nis: beneficiary.nis,
+        });
+      }
+    })();
+  }, []);
+
+  // Save company info as ERP client with famille = 'Bénéficiaire du logiciel' when company info changes
+  useEffect(() => {
+    (async () => {
+      if (!company.companyName || !company.rc) return;
+      const erpClients: ERPClient[] = await getERPClients();
+      let beneficiary = erpClients.find(c => c.famille === 'Bénéficiaire du logiciel');
+      if (!beneficiary) {
+        // Add new beneficiary client
+        const newClient: ERPClient = {
+          id: Date.now().toString(),
+          codeTiers: 'BEN' + Math.floor(100000 + Math.random() * 900000),
+          raisonSocial: company.companyName,
+          famille: 'Bénéficiaire du logiciel',
+          nom: '',
+          prenom: '',
+          activite: company.activity,
+          adresse: company.address,
+          ville: '',
+          rc: company.rc,
+          nif: company.nif,
+          nis: company.nis,
+          ai: company.ai,
+        };
+        await setERPClients([...erpClients, newClient]);
+      } else {
+        // Update existing beneficiary client
+        const updated = erpClients.map(c =>
+          c.famille === 'Bénéficiaire du logiciel'
+            ? {
+                ...c,
+                raisonSocial: company.companyName,
+                activite: company.activity,
+                adresse: company.address,
+                rc: company.rc,
+                nif: company.nif,
+                nis: company.nis,
+                ai: company.ai,
+              }
+            : c
+        );
+        await setERPClients(updated);
+      }
+    })();
+  }, [company]);
 
   const [items, setItems] = useState<Item[]>([]);
 

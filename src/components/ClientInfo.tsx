@@ -50,6 +50,29 @@ export default function ClientInfo({ client, onClientChange }: ClientInfoProps) 
     setActiviteInput(client.activity || '');
   }, [client.activity]);
 
+  function generateUniqueCLCode(existingCodes: string[]): string {
+    let code;
+    do {
+      code = 'CL' + Math.floor(100000 + Math.random() * 900000).toString();
+    } while (existingCodes.includes(code));
+    return code;
+  }
+
+  // Gather all existing clientCodes from ERP and invoice clients
+  const allClientCodes = [
+    ...erpClients.map(c => c.codeTiers),
+    client.clientCode
+  ].filter(Boolean);
+
+  useEffect(() => {
+    // Prefill clientCode with a unique CL code if empty
+    if (!client.clientCode) {
+      const uniqueCode = generateUniqueCLCode(allClientCodes);
+      onClientChange({ ...client, clientCode: uniqueCode });
+    }
+    // eslint-disable-next-line
+  }, [erpClients]);
+
   useEffect(() => {
     if (
       activiteHighlighted >= 0 &&
@@ -226,10 +249,11 @@ export default function ClientInfo({ client, onClientChange }: ClientInfoProps) 
           </label>
           <input
             type="text"
-            value={client.clientCode}
+            value={client.clientCode || generateUniqueCLCode(allClientCodes)}
             onChange={(e) => handleChange('clientCode', e.target.value)}
             className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm hover:bg-white/70 focus:bg-white/90 group-hover/item:border-green-300 text-sm sm:text-base"
             placeholder="Code client"
+            autoComplete="off"
           />
         </div>
 

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { Client, Article, Achat, AchatArticle, StockItem, Vente } from '@/types/erp';
 import { 
@@ -100,6 +100,10 @@ function AccueilERPTest() {
   const [showFamilleSuggestions, setShowFamilleSuggestions] = useState(false);
   const [familleHighlighted, setFamilleHighlighted] = useState(-1);
   const familleRefs = useRef<(HTMLLIElement | null)[]>([]);
+
+  // Move this after columns is defined:
+  // const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
+  // const [columnDropdownOpen, setColumnDropdownOpen] = useState(false);
 
   useEffect(() => {
     fetch('/codes_nomenclature.json')
@@ -404,6 +408,14 @@ function AccueilERPTest() {
     setClientForm({ ...clientForm, [name]: value });
   };
 
+  function generateUniqueCLCode(existingCodes: string[]): string {
+    let code;
+    do {
+      code = 'CL' + Math.floor(100000 + Math.random() * 900000).toString();
+    } while (existingCodes.includes(code));
+    return code;
+  }
+
   const handleClientSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientForm.raisonSocial.trim()) {
@@ -411,17 +423,22 @@ function AccueilERPTest() {
       return;
     }
     setClientError("");
+    let formToSave = { ...clientForm };
+    const allCodes = clients.map(c => c.codeTiers);
+    if (!formToSave.codeTiers || allCodes.includes(formToSave.codeTiers)) {
+      formToSave.codeTiers = generateUniqueCLCode(allCodes);
+    }
     if (editClientId) {
       // Edit mode
       const updatedClients = clients.map((c) =>
-        c.id === editClientId ? { ...c, ...clientForm } : c
+        c.id === editClientId ? { ...c, ...formToSave } : c
       );
       await saveClients(updatedClients);
       setEditClientId(null);
     } else {
       // Add mode
       const newClient: Client = {
-        ...clientForm,
+        ...formToSave,
         id: Date.now().toString(),
       };
       await saveClients([...clients, newClient]);
@@ -782,8 +799,29 @@ function AccueilERPTest() {
     }
   };
 
-  const { columns, rows } = getTable();
+  // Memoize columns and rows to prevent unnecessary re-renders
+  const { columns, rows } = useMemo(getTable, [activeMenu, clients, articles, achats, stock, ventes]);
   const filteredSortedRows = applyFiltersAndSorting(columns, rows);
+  // Add state for column visibility after columns is defined
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(columns);
+  const [columnDropdownOpen, setColumnDropdownOpen] = useState(false);
+
+  // Load visibleColumns from localForage on mount or when activeMenu/columns changes
+  useEffect(() => {
+    localforage.getItem<string[]>(`erp_visible_columns_${activeMenu}`).then((saved) => {
+      if (Array.isArray(saved) && saved.length > 0) {
+        setVisibleColumns(saved);
+      } else {
+        setVisibleColumns(columns); // fallback to all columns
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeMenu, columns]);
+
+  // Save visibleColumns to localForage when it changes
+  useEffect(() => {
+    localforage.setItem(`erp_visible_columns_${activeMenu}`, visibleColumns);
+  }, [visibleColumns, activeMenu]);
 
   // Add to toolbarButtons for all menus
   const exportAllData = async () => {
@@ -951,9 +989,9 @@ function AccueilERPTest() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--background)] flex flex-col pt-16 font-sans">
+    <div className="min-h-screen bg-[var(--background)] flex flex-col pt-16 font-sans md:px-4 ipad:px-6">
       {/* Top Menu Bar */}
-      <nav className="w-full bg-[var(--card)] shadow z-30 flex flex-col sm:flex-row items-center h-auto sm:h-16 px-3 sm:px-8 border-b border-[var(--border)] sticky top-0">
+      <nav className="w-full bg-[var(--card)] shadow z-30 flex flex-col sm:flex-row items-center h-auto sm:h-16 px-3 sm:px-8 ipad:px-6 border-b border-[var(--border)] sticky top-0">
         <div className="flex flex-wrap gap-1 sm:gap-6 w-full justify-between items-center py-3 sm:py-0">
           <div className="flex flex-wrap gap-1 sm:gap-6">
             {ERP_MENU_ITEMS.map((item) => (
@@ -1002,7 +1040,7 @@ function AccueilERPTest() {
       </nav>
 
       {/* Toolbar */}
-      <div className="bg-[var(--card)] border-b border-[var(--border)] shadow-sm flex flex-col sm:flex-row items-center px-3 sm:px-8 h-auto sm:h-14 z-30 sticky top-16">
+      <div className="bg-[var(--card)] border-b border-[var(--border)] shadow-sm flex flex-col sm:flex-row items-center px-3 sm:px-8 ipad:px-6 h-auto sm:h-14 z-30 sticky top-16">
         <div className="flex flex-wrap gap-2 w-full items-center justify-between py-3 sm:py-0">
           <div className="flex flex-wrap gap-2">
             {toolbarButtons.map((btn) => (
@@ -1014,14 +1052,72 @@ function AccueilERPTest() {
                 {btn.label}
               </button>
             ))}
+            {/* Column visibility dropdown button removed from here */}
           </div>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-3 sm:p-8 pt-4 sm:pt-10 overflow-x-auto">
-        <div className="bg-[var(--card)] rounded-2xl shadow-lg border border-[var(--border)] p-3 sm:p-8">
-          <h2 className="text-lg sm:text-2xl font-bold mb-6 text-[var(--primary-dark)] tracking-tight">{ERP_MENU_ITEMS.find((m) => m.key === activeMenu)?.label}</h2>
+      <main className="flex-1 p-3 sm:p-8 md:p-2 ipad:p-0 pt-4 sm:pt-10 overflow-x-auto ipad:items-stretch ipad:justify-start">
+        <div className="bg-[var(--card)] rounded-2xl shadow-lg border border-[var(--border)] p-3 sm:p-8 md:p-2 ipad:p-0 md:max-w-none md:w-full md:mx-0 ipad:max-w-none ipad:w-full ipad:mx-0">
+          <div className="flex items-center justify-between mb-6 ipad:flex-col ipad:items-start ipad:gap-2 md:flex-col md:items-start md:gap-2">
+            <h2 className="text-lg sm:text-2xl md:text-lg ipad:text-lg font-bold text-[var(--primary-dark)] tracking-tight">
+              {ERP_MENU_ITEMS.find((m) => m.key === activeMenu)?.label}
+            </h2>
+            <button
+              type="button"
+              className="ml-2 inline-flex items-center justify-center w-8 h-8 rounded hover:bg-[var(--primary)]/20 transition text-[var(--primary-dark)] border border-[var(--border)] ipad:ml-0 ipad:px-4 ipad:py-2 md:ml-0 md:px-3 md:py-2"
+              onClick={() => setColumnDropdownOpen((open) => !open)}
+              title="Afficher/Masquer les colonnes"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            {columnDropdownOpen && (
+              <div className="absolute z-50 right-8 mt-12 sm:w-56 w-[90vw] min-w-[10rem] bg-white border border-[var(--primary)]/20 rounded-lg shadow-lg p-2">
+                <div className="mb-2 font-semibold text-[var(--primary-dark)] text-sm">Colonnes à afficher</div>
+                <div className="max-h-60 overflow-y-auto">
+                  {/* Select All Option */}
+                  <label className="flex items-center px-2 py-1 cursor-pointer text-xs font-semibold">
+                    <input
+                      type="checkbox"
+                      checked={visibleColumns.length === columns.length}
+                      onChange={e => {
+                        if (e.target.checked) {
+                          setVisibleColumns(columns);
+                        } else {
+                          setVisibleColumns([]);
+                        }
+                      }}
+                    />
+                    <span className="ml-2">Tout sélectionner</span>
+                  </label>
+                  {/* Individual columns */}
+                  {columns.map((col) => (
+                    <label key={col} className="flex items-center px-2 py-1 cursor-pointer text-xs">
+                      <input
+                        type="checkbox"
+                        checked={visibleColumns.includes(col)}
+                        onChange={e => {
+                          if (e.target.checked) {
+                            setVisibleColumns(prev => [...prev, col]);
+                          } else {
+                            setVisibleColumns(prev => prev.filter(c => c !== col));
+                          }
+                        }}
+                      />
+                      <span className="ml-2">{col}</span>
+                    </label>
+                  ))}
+                </div>
+                <button
+                  className="mt-2 w-full px-2 py-1 rounded bg-gray-100 text-gray-600 text-xs font-semibold hover:bg-gray-200"
+                  onClick={() => setColumnDropdownOpen(false)}
+                >Fermer</button>
+              </div>
+            )}
+          </div>
           {/* --- FORMS --- */}
           {activeMenu === "tiers" && showClientForm && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 sm:p-4">
@@ -1038,7 +1134,14 @@ function AccueilERPTest() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 px-4 sm:px-6 py-4 sm:py-6 bg-gradient-to-br from-[var(--card)] via-[var(--primary)]/5 to-[var(--primary)]/10">
                   <div className="sm:col-span-2">
                     <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">Code Tiers</label>
-                    <input name="codeTiers" value={clientForm.codeTiers} onChange={handleClientChange} className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm" placeholder="Code Tiers" />
+                    <input
+                      name="codeTiers"
+                      value={clientForm.codeTiers || generateUniqueCLCode(clients.map(c => c.codeTiers))}
+                      onChange={handleClientChange}
+                      className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm"
+                      placeholder="Code Tiers"
+                      autoComplete="off"
+                    />
                   </div>
                   <div className="sm:col-span-2">
                     <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">Raison Sociale *</label>
@@ -1166,6 +1269,50 @@ function AccueilERPTest() {
                     {clientAIWarning && (
                       <p className="text-xs text-red-600 mt-1">{clientAIWarning}</p>
                     )}
+                  </div>
+                  <div>
+                    <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">Capital</label>
+                    <input
+                      name="capital"
+                      type="text"
+                      value={clientForm.capital || ''}
+                      onChange={handleClientChange}
+                      className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm"
+                      placeholder="Capital (optionnel)"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">Email</label>
+                    <input
+                      name="email"
+                      type="email"
+                      value={clientForm.email || ''}
+                      onChange={handleClientChange}
+                      className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm"
+                      placeholder="Email (optionnel)"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">Téléphone</label>
+                    <input
+                      name="telephone"
+                      type="text"
+                      value={clientForm.telephone || ''}
+                      onChange={handleClientChange}
+                      className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm"
+                      placeholder="Téléphone (optionnel)"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">Site web</label>
+                    <input
+                      name="web"
+                      type="text"
+                      value={clientForm.web || ''}
+                      onChange={handleClientChange}
+                      className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm"
+                      placeholder="Site web (optionnel)"
+                    />
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 px-4 sm:px-6 pb-4 sm:pb-6 pt-2 border-t border-[var(--primary)]/20 bg-gradient-to-r from-[var(--primary)]/5 to-[var(--primary)]/10 justify-end sticky bottom-0 bg-[var(--card)] z-10">
@@ -1353,18 +1500,16 @@ function AccueilERPTest() {
           )}
           {/* --- TABLE --- */}
           {/* Responsive table wrapper */}
-          <div className="overflow-x-auto sm:overflow-x-visible w-full mt-4 rounded-2xl border-2 border-[var(--primary)]/30 shadow-xl">
+          <div className="overflow-x-auto w-full mt-4 rounded-2xl border-2 border-[var(--primary)]/30 shadow-xl ipad:rounded-xl ipad:border ipad:mt-2 md:rounded-xl md:border md:mt-2">
             <div className="min-w-full overflow-visible">
-              <table className="w-full text-xs sm:text-sm rounded-2xl overflow-visible border-separate border-spacing-0">
-                <thead className="bg-gradient-to-r from-[var(--primary)]/20 to-[var(--primary)]/10 border-b-2 border-[var(--primary)]/30">
+              <table className="w-full text-xs sm:text-sm md:text-base ipad:text-base rounded-2xl overflow-visible border-separate border-spacing-0">
+                <thead className="bg-gradient-to-r from-[var(--primary)]/20 to-[var(--primary)]/10 border-b-2 border-[var(--primary)]/30 sticky top-0 z-20">
                   <tr>
-                    {columns.map((col, colIdx) => {
-                      const isFiltered = filters[col] && filters[col].length > 0;
-                      const isSorted = sortColumn === col;
-                      return (
+                    {columns.map((col, colIdx) =>
+                      visibleColumns.includes(col) ? (
                         <th
                           key={col}
-                          className="px-2 sm:px-4 py-3 sm:py-4 text-left font-bold text-[var(--primary-dark)] uppercase tracking-wider bg-[var(--primary)]/10 border-b-2 border-[var(--primary)]/30 first:rounded-tl-2xl last:rounded-tr-2xl text-xs sm:text-sm cursor-pointer select-none relative"
+                          className="px-2 sm:px-4 py-3 sm:py-4 text-left font-bold text-[var(--primary-dark)] uppercase tracking-wider bg-[var(--primary)]/10 border-b-2 border-[var(--primary)]/30 first:rounded-tl-2xl text-xs sm:text-sm cursor-pointer select-none relative sticky top-0 z-10"
                           onClick={() => {
                             if (sortColumn === col) {
                               setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -1377,7 +1522,7 @@ function AccueilERPTest() {
                           <div className="flex items-center justify-between w-full">
                             <span className="flex items-center">
                               {col}
-                              {isSorted && (
+                              {sortColumn === col && (
                                 <span className="ml-1 align-middle text-[10px]">
                                   {sortDirection === 'asc' ? '▲' : '▼'}
                                 </span>
@@ -1386,7 +1531,7 @@ function AccueilERPTest() {
                             <span className="relative">
                               <button
                                 type="button"
-                                className={`ml-2 inline-flex items-center justify-center w-5 h-5 rounded hover:bg-[var(--primary)]/20 transition filter-dropdown ${isFiltered ? 'text-[var(--primary)]' : 'text-gray-400'}`}
+                                className={`ml-2 inline-flex items-center justify-center w-5 h-5 rounded hover:bg-[var(--primary)]/20 transition filter-dropdown ${(filters[col] && filters[col].length > 0) ? 'text-[var(--primary)]' : 'text-gray-400'}`}
                                 onClick={e => { e.stopPropagation(); setFilterDropdownOpen(filterDropdownOpen === col ? null : col); setPendingFilters(filters); }}
                                 title="Filtrer"
                               >
@@ -1455,10 +1600,10 @@ function AccueilERPTest() {
                             </span>
                           </div>
                         </th>
-                      );
-                    })}
+                      ) : null
+                    )}
                     {(activeMenu === "tiers" || activeMenu === "articles" || activeMenu === "achat" || activeMenu === "stock" || activeMenu === "ventes") && (
-                      <th className="px-4 py-4 text-left font-bold text-[var(--primary-dark)] uppercase tracking-wider bg-[var(--primary)]/10 border-b-2 border-[var(--primary)]/30 last:rounded-tr-2xl text-xs sm:text-sm">Action</th>
+                      <th className="px-4 py-4 text-left font-bold text-[var(--primary-dark)] uppercase tracking-wider bg-[var(--primary)]/10 border-b-2 border-[var(--primary)]/30 last:rounded-tr-2xl text-xs sm:text-sm sticky top-0 z-10">Action</th>
                     )}
                   </tr>
                 </thead>
@@ -1472,11 +1617,13 @@ function AccueilERPTest() {
                       <tr key={idx} className={
                         `transition-colors duration-200 ${idx % 2 === 0 ? "bg-white/90" : "bg-[var(--table-row-alt)]/80"} hover:bg-[var(--primary)]/10 border-b border-[var(--primary)]/10`
                       }>
-                        {row.map((cell, i) => (
-                          <td key={i} className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm border-b border-[var(--primary)]/10 first:rounded-bl-2xl last:rounded-br-2xl">
-                            {cell}
-                          </td>
-                        ))}
+                        {row.map((cell, i) =>
+                          visibleColumns.includes(columns[i]) ? (
+                            <td key={i} className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm border-b border-[var(--primary)]/10 first:rounded-bl-2xl last:rounded-br-2xl">
+                              {cell}
+                            </td>
+                          ) : null
+                        )}
                         {activeMenu === "tiers" && (
                           <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
                             <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
@@ -1635,6 +1782,30 @@ function AccueilERPTest() {
           e.target.value = '';
         }}
       />
+      {/* Add a style block for mobile table improvements: */}
+      <style jsx global>{`
+        @media (max-width: 640px) {
+          table {
+            font-size: 13px;
+          }
+          th, td {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+          }
+          thead th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: var(--card);
+          }
+          tbody tr {
+            border-radius: 1rem;
+            box-shadow: 0 1px 4px 0 rgba(30,42,80,0.06);
+          }
+        }
+      `}</style>
     </div>
   );
 }

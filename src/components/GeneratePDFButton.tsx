@@ -8,6 +8,8 @@ import { useRouter } from 'next/navigation';
 import { addInvoice, getVentes, setVentes, addCompleteInvoice } from '@/utils/invoiceStorage';
 import { getStock, setStock } from '@/utils/erpStorage';
 import localforage from 'localforage';
+import { getClients as getERPClients, setClients as setERPClients } from '@/utils/erpStorage';
+import type { Client as ERPClient } from '@/types/erp';
 
 interface GeneratePDFButtonProps {
   invoiceData: InvoiceData;
@@ -29,6 +31,35 @@ export default function GeneratePDFButton({ invoiceData, isEditing = false }: Ge
     setHasDownloaded(false);
     
     try {
+      // --- Add client to ERP if not exists ---
+      const erpClients: ERPClient[] = await getERPClients();
+      const invoiceClient = invoiceData.client;
+      // Try to match by clientCode (invoice) to codeTiers (ERP), or by BOTH name (raisonSocial) AND RC
+      const exists = erpClients.some(c =>
+        c.codeTiers === invoiceClient.clientCode ||
+        ((c.raisonSocial && c.raisonSocial.trim().toLowerCase() === (invoiceClient.clientName || '').trim().toLowerCase()) &&
+         (c.rc && c.rc.trim() !== '' && c.rc.trim() === (invoiceClient.rc || '').trim()))
+      );
+      if (!exists) {
+        // Map invoice client to ERP client
+        const newERPClient: ERPClient = {
+          id: Date.now().toString(),
+          codeTiers: invoiceClient.clientCode,
+          raisonSocial: invoiceClient.clientName,
+          famille: '',
+          nom: '',
+          prenom: '',
+          activite: invoiceClient.activity,
+          adresse: invoiceClient.address,
+          ville: invoiceClient.city,
+          rc: invoiceClient.rc,
+          nif: invoiceClient.nif,
+          nis: invoiceClient.nis,
+          ai: invoiceClient.ai,
+        };
+        await setERPClients([...erpClients, newERPClient]);
+      }
+
       const bytes = await generateInvoicePDF(invoiceData);
       setPdfBytes(bytes);
       setIsSuccess(true);
