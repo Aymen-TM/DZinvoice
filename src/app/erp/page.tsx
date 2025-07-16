@@ -87,6 +87,20 @@ function AccueilERPTest() {
   const [clientActiviteHighlighted, setClientActiviteHighlighted] = useState(-1);
   const clientActiviteRefs = useRef<(HTMLLIElement | null)[]>([]);
 
+  const [clientAIWarning, setClientAIWarning] = useState("");
+  const [clientAIInput, setClientAIInput] = useState("");
+  const [clientNIFWarning, setClientNIFWarning] = useState("");
+  const [clientNISWarning, setClientNISWarning] = useState("");
+  const [clientNIFInput, setClientNIFInput] = useState("");
+  const [clientNISInput, setClientNISInput] = useState("");
+
+  const [familleOptions, setFamilleOptions] = useState<string[]>([]);
+  const [familleInput, setFamilleInput] = useState("");
+  const [familleSuggestions, setFamilleSuggestions] = useState<string[]>([]);
+  const [showFamilleSuggestions, setShowFamilleSuggestions] = useState(false);
+  const [familleHighlighted, setFamilleHighlighted] = useState(-1);
+  const familleRefs = useRef<(HTMLLIElement | null)[]>([]);
+
   useEffect(() => {
     fetch('/codes_nomenclature.json')
       .then(res => res.json())
@@ -106,6 +120,32 @@ function AccueilERPTest() {
       clientActiviteRefs.current[clientActiviteHighlighted]?.scrollIntoView({ block: 'nearest' });
     }
   }, [clientActiviteHighlighted, clientActiviteSuggestions]);
+
+  useEffect(() => {
+    setClientAIInput(clientForm.ai || "");
+    setClientNIFInput(clientForm.nif || "");
+    setClientNISInput(clientForm.nis || "");
+  }, [showClientForm, clientForm.ai, clientForm.nif, clientForm.nis]);
+
+  useEffect(() => {
+    // Gather unique famille values from all clients
+    const uniqueFamilles = Array.from(new Set(clients.map(c => c.famille).filter(f => f && f.trim() !== "")));
+    setFamilleOptions(uniqueFamilles);
+  }, [clients]);
+
+  useEffect(() => {
+    setFamilleInput(clientForm.famille || "");
+  }, [clientForm.famille, showClientForm]);
+
+  useEffect(() => {
+    if (
+      familleHighlighted >= 0 &&
+      familleHighlighted < familleSuggestions.length &&
+      familleRefs.current[familleHighlighted]
+    ) {
+      familleRefs.current[familleHighlighted]?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [familleHighlighted, familleSuggestions]);
 
   const handleClientActiviteInput = (value: string) => {
     setClientActiviteInput(value);
@@ -145,6 +185,45 @@ function AccueilERPTest() {
     setClientActiviteInput(libelle);
     setClientForm((prev) => ({ ...prev, activite: libelle }));
     setShowClientActiviteSuggestions(false);
+  };
+
+  const handleFamilleInput = (value: string) => {
+    setFamilleInput(value);
+    setClientForm((prev) => ({ ...prev, famille: value }));
+    if (value.length > 0) {
+      const suggestions = familleOptions.filter(opt =>
+        opt.toLowerCase().includes(value.toLowerCase())
+      ).slice(0, 10);
+      setFamilleSuggestions(suggestions);
+      setShowFamilleSuggestions(true);
+      setFamilleHighlighted(-1);
+    } else {
+      setShowFamilleSuggestions(false);
+      setFamilleHighlighted(-1);
+    }
+  };
+
+  const handleFamilleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showFamilleSuggestions || familleSuggestions.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setFamilleHighlighted(h => Math.min(h + 1, familleSuggestions.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setFamilleHighlighted(h => Math.max(h - 1, 0));
+    } else if (e.key === 'Enter') {
+      if (familleHighlighted >= 0 && familleHighlighted < familleSuggestions.length) {
+        handleFamilleSelect(familleSuggestions[familleHighlighted]);
+      }
+    } else if (e.key === 'Escape') {
+      setShowFamilleSuggestions(false);
+    }
+  };
+
+  const handleFamilleSelect = (famille: string) => {
+    setFamilleInput(famille);
+    setClientForm((prev) => ({ ...prev, famille }));
+    setShowFamilleSuggestions(false);
   };
 
   // Sync arrays with achatForm.articles length
@@ -276,7 +355,53 @@ function AccueilERPTest() {
   };
 
   const handleClientChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setClientForm({ ...clientForm, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === "ai") {
+      // Only allow numbers in the input field
+      if (/[^0-9]/.test(value)) {
+        setClientAIWarning("Le numéro AI ne doit contenir que des chiffres.");
+        // Remove all non-numeric characters from the input
+        const numericValue = value.replace(/\D/g, "");
+        setClientAIInput(numericValue);
+        setClientForm({ ...clientForm, [name]: numericValue.slice(0, 11) });
+        return;
+      }
+      setClientAIInput(value);
+      if (value.length > 11) {
+        setClientAIWarning("Le numéro AI ne doit pas dépasser 11 caractères.");
+      } else {
+        setClientAIWarning("");
+      }
+      setClientForm({ ...clientForm, [name]: value.slice(0, 11) });
+      return;
+    }
+    if (name === "nif") {
+      if (/[^0-9]/.test(value)) {
+        setClientNIFWarning("Le NIF ne doit contenir que des chiffres.");
+        const numericValue = value.replace(/\D/g, "");
+        setClientNIFInput(numericValue);
+        setClientForm({ ...clientForm, [name]: numericValue });
+        return;
+      }
+      setClientNIFInput(value);
+      setClientNIFWarning("");
+      setClientForm({ ...clientForm, [name]: value });
+      return;
+    }
+    if (name === "nis") {
+      if (/[^0-9]/.test(value)) {
+        setClientNISWarning("Le NIS ne doit contenir que des chiffres.");
+        const numericValue = value.replace(/\D/g, "");
+        setClientNISInput(numericValue);
+        setClientForm({ ...clientForm, [name]: numericValue });
+        return;
+      }
+      setClientNISInput(value);
+      setClientNISWarning("");
+      setClientForm({ ...clientForm, [name]: value });
+      return;
+    }
+    setClientForm({ ...clientForm, [name]: value });
   };
 
   const handleClientSubmit = async (e: React.FormEvent) => {
@@ -921,9 +1046,36 @@ function AccueilERPTest() {
                   </div>
                   <div>
                     <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">Famille</label>
-                    <input name="famille" value={clientForm.famille} onChange={handleClientChange} className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm" placeholder="Famille" />
+                    <div className="relative">
+                      <input
+                        name="famille"
+                        type="text"
+                        value={familleInput}
+                        onChange={e => handleFamilleInput(e.target.value)}
+                        onFocus={() => familleInput.length > 0 && setShowFamilleSuggestions(true)}
+                        onBlur={() => setTimeout(() => setShowFamilleSuggestions(false), 100)}
+                        className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm"
+                        placeholder="Famille"
+                        autoComplete="off"
+                        onKeyDown={handleFamilleKeyDown}
+                      />
+                      {showFamilleSuggestions && familleSuggestions.length > 0 && (
+                        <ul className="absolute z-10 left-0 right-0 bg-white border border-[var(--primary)]/30 rounded-xl mt-1 max-h-56 overflow-y-auto shadow-lg">
+                          {familleSuggestions.map((opt, idx) => (
+                            <li
+                              key={opt}
+                              ref={el => { familleRefs.current[idx] = el; }}
+                              className={`px-4 py-2 cursor-pointer text-sm ${idx === familleHighlighted ? 'bg-blue-100 font-semibold' : 'hover:bg-blue-100'}`}
+                              onMouseDown={() => handleFamilleSelect(opt)}
+                            >
+                              {opt}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   </div>
-                  <div>
+                  <div className="sm:col-span-2">
                     <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">Activité</label>
                     <div className="relative">
                       <input
@@ -969,15 +1121,51 @@ function AccueilERPTest() {
                   </div>
                   <div>
                     <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">NIF</label>
-                    <input name="nif" value={clientForm.nif} onChange={handleClientChange} className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm" placeholder="NIF" />
+                    <input
+                      name="nif"
+                      type="text"
+                      value={clientNIFInput}
+                      onChange={handleClientChange}
+                      className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm"
+                      placeholder="NIF"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                    />
+                    {clientNIFWarning && (
+                      <p className="text-xs text-red-600 mt-1">{clientNIFWarning}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">NIS</label>
-                    <input name="nis" value={clientForm.nis} onChange={handleClientChange} className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm" placeholder="NIS" />
+                    <input
+                      name="nis"
+                      type="text"
+                      value={clientNISInput}
+                      onChange={handleClientChange}
+                      className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm"
+                      placeholder="NIS"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                    />
+                    {clientNISWarning && (
+                      <p className="text-xs text-red-600 mt-1">{clientNISWarning}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">AI</label>
-                    <input name="ai" value={clientForm.ai} onChange={handleClientChange} className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm" placeholder="AI" />
+                    <input
+                      name="ai"
+                      type="text"
+                      value={clientAIInput}
+                      onChange={handleClientChange}
+                      className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm"
+                      placeholder="AI"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                    />
+                    {clientAIWarning && (
+                      <p className="text-xs text-red-600 mt-1">{clientAIWarning}</p>
+                    )}
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 px-4 sm:px-6 pb-4 sm:pb-6 pt-2 border-t border-[var(--primary)]/20 bg-gradient-to-r from-[var(--primary)]/5 to-[var(--primary)]/10 justify-end sticky bottom-0 bg-[var(--card)] z-10">
