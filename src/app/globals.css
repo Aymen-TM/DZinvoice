@@ -58,6 +58,10 @@ body {
   letter-spacing: 0.01em;
 }
 
+body {
+  background: #fff !important;
+}
+
 @layer base {
   input, textarea, select {
     @apply text-[#333333] placeholder-[#888888] bg-[#f9f9f9];
