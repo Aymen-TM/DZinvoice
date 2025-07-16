@@ -85,7 +85,10 @@ function CreateInvoiceContent() {
     amountInWords: 'Zéro dinars',
   });
 
+  // Ensure invoiceData includes an id property
+  const id = (meta as any).id || Date.now().toString();
   const invoiceData: InvoiceData = {
+    id,
     company,
     client,
     meta,
