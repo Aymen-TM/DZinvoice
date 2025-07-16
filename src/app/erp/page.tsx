@@ -423,7 +423,7 @@ function AccueilERPTest() {
       return;
     }
     setClientError("");
-    let formToSave = { ...clientForm };
+    const formToSave = { ...clientForm };
     const allCodes = clients.map(c => c.codeTiers);
     if (!formToSave.codeTiers || allCodes.includes(formToSave.codeTiers)) {
       formToSave.codeTiers = generateUniqueCLCode(allCodes);
@@ -815,7 +815,6 @@ function AccueilERPTest() {
         setVisibleColumns(columns); // fallback to all columns
       }
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeMenu, columns]);
 
   // Save visibleColumns to localForage when it changes
