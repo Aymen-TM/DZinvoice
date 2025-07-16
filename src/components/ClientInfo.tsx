@@ -234,7 +234,7 @@ export default function ClientInfo({ client, onClientChange }: ClientInfoProps) 
         </div>
 
         <div className="space-y-2 group/item">
-          <label className="block text-sm font-semibold text-gray-700 mb-2 group-hover/item:text-green-600 transition-colors duration-200">
+          <label className="block text-sm font-semibold text-gray-700 mb-2 group-hover/item:text-blue-600 transition-colors duration-200">
             Activité
           </label>
           <div className="relative">
@@ -244,7 +244,7 @@ export default function ClientInfo({ client, onClientChange }: ClientInfoProps) 
               onChange={(e) => handleActiviteInput(e.target.value)}
               onFocus={() => activiteInput.length > 1 && setShowActiviteSuggestions(true)}
               onBlur={() => setTimeout(() => setShowActiviteSuggestions(false), 100)}
-              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm hover:bg-white/70 focus:bg-white/90 group-hover/item:border-green-300 text-sm sm:text-base"
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm hover:bg-white/70 focus:bg-white/90 group-hover/item:border-blue-300 text-sm sm:text-base"
               placeholder="Activité"
               autoComplete="off"
               onKeyDown={handleActiviteKeyDown}
@@ -255,7 +255,7 @@ export default function ClientInfo({ client, onClientChange }: ClientInfoProps) 
                   <li
                     key={opt.CODE}
                     ref={el => { activiteRefs.current[idx] = el; }}
-                    className={`px-4 py-2 cursor-pointer text-sm ${idx === activiteHighlighted ? 'bg-green-100 font-semibold' : 'hover:bg-green-100'}`}
+                    className={`px-4 py-2 cursor-pointer text-sm ${idx === activiteHighlighted ? 'bg-blue-100 font-semibold' : 'hover:bg-blue-100'}`}
                     onMouseDown={() => handleActiviteSelect(opt.LIBELLE)}
                   >
                     <span className="font-mono text-gray-500 mr-2">{opt.CODE}</span>
