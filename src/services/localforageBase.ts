@@ -13,7 +13,7 @@ export async function getById<T extends {id: string}>(table: string, id: string)
 export async function create<T extends {id: string}>(table: string, data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>): Promise<T> {
   const now = new Date().toISOString();
   // Use provided id if present, otherwise generate a UUID
-  const item = { ...data, id: (data as {id: string}).id || uuidv4(), createdAt: now, updatedAt: now } as T;
+  const item = { ...data, id: ((data as unknown) as {id: string}).id || uuidv4(), createdAt: now, updatedAt: now } as unknown as T;
   const all = await getAll<T>(table);
   all.push(item);
   await localforage.setItem(table, all);
