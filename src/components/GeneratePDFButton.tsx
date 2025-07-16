@@ -55,8 +55,8 @@ export default function GeneratePDFButton({ invoiceData, isEditing = false }: Ge
 
       // Save complete invoice data for editing
       const completeInvoiceData = {
-        id: invoiceData.meta.invoiceNumber, // Use invoice number as ID
         ...invoiceData,
+        id: invoiceData.meta.invoiceNumber, // Use invoice number as ID
       };
       await addCompleteInvoice(completeInvoiceData);
       // Update or add vente to ventes table
