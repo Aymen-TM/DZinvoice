@@ -86,7 +86,7 @@ function CreateInvoiceContent() {
   });
 
   // Ensure invoiceData includes an id property
-  const id = (meta as any).id || Date.now().toString();
+  const id = Date.now().toString();
   const invoiceData: InvoiceData = {
     id,
     company,
