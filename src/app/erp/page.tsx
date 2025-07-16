@@ -32,7 +32,7 @@ const emptyAchatArticle: AchatArticle = { id: '', ref: '', designation: '', quan
 
 type ToolbarButton = { key: string; label: string; onClick?: () => void };
 
-export function AccueilERPTest() {
+function AccueilERPTest() {
   const [activeMenu, setActiveMenu] = useState("articles");
   const [clients, setClientsState] = useState<Client[]>([]);
   const [showClientForm, setShowClientForm] = useState(false);
@@ -1353,9 +1353,8 @@ export function AccueilERPTest() {
       />
     </div>
   );
-} 
+}
 
-// Only export ERPPageWithSuspense as default
 export default function ERPPageWithSuspense() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
