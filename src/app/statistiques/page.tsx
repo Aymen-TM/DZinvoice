@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Bar, Pie, Line, Radar, Scatter } from "react-chartjs-2";
 import { 
   Chart, 
@@ -161,11 +161,7 @@ export default function StatistiquesPage() {
   });
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['overview']));
 
-  useEffect(() => {
-    loadStatistics();
-  }, [filters.dateRange, filters.startDate, filters.endDate, filters.useCustomDateRange, loadStatistics]);
-
-  const loadStatistics = async () => {
+  const loadStatistics = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -340,7 +336,11 @@ export default function StatistiquesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
+
+  useEffect(() => {
+    loadStatistics();
+  }, [filters.dateRange, filters.startDate, filters.endDate, filters.useCustomDateRange, loadStatistics]);
 
   // Helper functions for advanced calculations
   const calculateForecast = (data: number[]): number[] => {
@@ -406,8 +406,8 @@ export default function StatistiquesPage() {
   };
 
   // Advanced calculation functions
-  const calculateDailyStats = (ventes: Vente[], achats: Achat[]) => {
-    const dailyStats: { [date: string]: any } = {};
+  const calculateDailyStats = (ventes: Vente[], achats: Achat[], clients: Client[]) => {
+    const dailyStats: { [date: string]: { ventes: number; achats: number; orders: number; customers: number } } = {};
     
     ventes.forEach(vente => {
       const date = new Date(vente.date).toISOString().split('T')[0];
