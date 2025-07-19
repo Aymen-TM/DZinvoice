@@ -41,7 +41,6 @@ import { getCompleteInvoices } from '@/utils/invoiceStorage';
 import { getHistory } from '@/services/history';
 import type { Vente, Client, Achat, Article, StockItem } from '@/types/erp';
 import type { HistoryAction } from '@/services/history';
-import Image from 'next/image';
 
 Chart.register(
   CategoryScale, 

@@ -19,6 +19,7 @@ import {
   FiAlertTriangle
 } from 'react-icons/fi';
 import { useSettings } from '../../hooks/useSettings';
+import Image from 'next/image';
 
 export default function ParametresPage() {
   const [activeTab, setActiveTab] = useState('company');
@@ -191,7 +192,13 @@ export default function ParametresPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Logo de l'entreprise</label>
                     <div className="flex items-center space-x-4">
                       {companySettings.logo && (
-                        <img src={companySettings.logo} alt="Logo" className="w-20 h-20 object-contain border rounded-lg" />
+                        <Image
+                          src={companySettings.logo}
+                          alt="Logo"
+                          width={80}
+                          height={80}
+                          className="w-20 h-20 object-contain border rounded-lg"
+                        />
                       )}
                       <input
                         type="file"
@@ -300,7 +307,7 @@ export default function ParametresPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Devise par défaut</label>
                     <select
                       value={invoiceSettings.defaultCurrency}
-                      onChange={(e) => updateInvoiceSettings({...invoiceSettings, defaultCurrency: e.target.value})}
+                      onChange={(e) => updateInvoiceSettings({...invoiceSettings, defaultCurrency: e.target.value as string})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="DA">Dinar Algérien (DA)</option>
@@ -358,7 +365,7 @@ export default function ParametresPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Langue par défaut</label>
                     <select
                       value={invoiceSettings.defaultLanguage}
-                      onChange={(e) => updateInvoiceSettings({...invoiceSettings, defaultLanguage: e.target.value})}
+                      onChange={(e) => updateInvoiceSettings({...invoiceSettings, defaultLanguage: e.target.value as string})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="fr">Français</option>
@@ -391,7 +398,7 @@ export default function ParametresPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Thème</label>
                     <select
                       value={userPreferences.theme}
-                      onChange={(e) => updateUserPreferences({...userPreferences, theme: e.target.value as any})}
+                      onChange={(e) => updateUserPreferences({...userPreferences, theme: e.target.value as 'light' | 'dark' | 'auto'})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="light">Clair</option>
@@ -404,7 +411,7 @@ export default function ParametresPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Langue</label>
                     <select
                       value={userPreferences.language}
-                      onChange={(e) => updateUserPreferences({...userPreferences, language: e.target.value})}
+                      onChange={(e) => updateUserPreferences({...userPreferences, language: e.target.value as string})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="fr">Français</option>
@@ -418,7 +425,7 @@ export default function ParametresPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Fuseau horaire</label>
                     <select
                       value={userPreferences.timezone}
-                      onChange={(e) => updateUserPreferences({...userPreferences, timezone: e.target.value})}
+                      onChange={(e) => updateUserPreferences({...userPreferences, timezone: e.target.value as string})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="Africa/Algiers">Algérie (UTC+1)</option>
@@ -435,7 +442,7 @@ export default function ParametresPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Format de date</label>
                     <select
                       value={userPreferences.dateFormat}
-                      onChange={(e) => updateUserPreferences({...userPreferences, dateFormat: e.target.value})}
+                      onChange={(e) => updateUserPreferences({...userPreferences, dateFormat: e.target.value as string})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="DD/MM/YYYY">DD/MM/YYYY</option>
@@ -509,7 +516,7 @@ export default function ParametresPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Fréquence de sauvegarde</label>
                     <select
                       value={systemSettings.backupFrequency}
-                      onChange={(e) => updateSystemSettings({...systemSettings, backupFrequency: e.target.value})}
+                      onChange={(e) => updateSystemSettings({...systemSettings, backupFrequency: e.target.value as string})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="daily">Quotidienne</option>
