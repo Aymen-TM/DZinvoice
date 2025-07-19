@@ -171,7 +171,6 @@ export default function StatistiquesPage() {
     showTrends: true,
     useCustomDateRange: false
   });
-  const [selectedKPIs, setSelectedKPIs] = useState<string[]>(['sales', 'profit', 'growth']);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['overview']));
 
   useEffect(() => {
@@ -820,7 +819,7 @@ export default function StatistiquesPage() {
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <select 
                 value={filters.viewMode} 
-                onChange={(e) => setFilters({...filters, viewMode: e.target.value as any})}
+                onChange={(e) => setFilters({...filters, viewMode: e.target.value as 'overview' | 'detailed' | 'comparison'})}
                 className="px-4 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white w-full sm:w-auto"
               >
                 <option value="overview">Vue d'ensemble</option>
