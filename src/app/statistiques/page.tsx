@@ -293,10 +293,10 @@ export default function StatistiquesPage() {
 
       // Calculate all advanced analytics
       const dailyStats = calculateDailyStats(filteredVentes, filteredAchats, clients);
-      const clientSegments = calculateClientSegments(filteredVentes, clients);
-      const productAnalytics = calculateProductAnalytics(articles, stock, filteredVentes);
+      const clientSegments = calculateClientSegments(filteredVentes);
+      const productAnalytics = calculateProductAnalytics(articles, stock);
       const financialMetrics = calculateFinancialMetrics(filteredVentes, filteredAchats, articles);
-      const operationalMetrics = calculateOperationalMetrics(filteredVentes, clients, stock);
+      const operationalMetrics = calculateOperationalMetrics(filteredVentes);
       const marketAnalysis = calculateMarketAnalysis(filteredVentes, clients);
       const riskAssessment = calculateRiskAssessment(filteredVentes, stock, clients);
 

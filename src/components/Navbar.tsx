@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useSettingsContext } from "./SettingsProvider";
 
 const NAV_LINKS = [
-  { name: "Accueil", href: "/landing" },
+  { name: "Accueil", href: "/" },
   { name: "Créer une facture", href: "/create-invoice" },
   { name: "ERP", href: "/erp" },
   { name: "Historique", href: "/historique" },
