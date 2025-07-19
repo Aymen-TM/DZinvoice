@@ -68,7 +68,7 @@ interface StatsData {
   monthlyAchats: number[];
   categoryDistribution: { [key: string]: number };
   clientDistribution: { [key: string]: number };
-  recentActivity: any[];
+  recentActivity: unknown[]; // ou crée une interface RecentActivity si tu connais la structure
   // Advanced metrics
   profitMargin: number;
   growthRate: number;
@@ -163,7 +163,7 @@ export default function StatistiquesPage() {
 
   useEffect(() => {
     loadStatistics();
-  }, [filters.dateRange, filters.startDate, filters.endDate, filters.useCustomDateRange]);
+  }, [filters.dateRange, filters.startDate, filters.endDate, filters.useCustomDateRange, loadStatistics]);
 
   const loadStatistics = async () => {
     try {
@@ -406,7 +406,7 @@ export default function StatistiquesPage() {
   };
 
   // Advanced calculation functions
-  const calculateDailyStats = (ventes: Vente[], achats: Achat[], clients: Client[]) => {
+  const calculateDailyStats = (ventes: Vente[], achats: Achat[]) => {
     const dailyStats: { [date: string]: any } = {};
     
     ventes.forEach(vente => {
@@ -523,7 +523,7 @@ export default function StatistiquesPage() {
     };
   };
 
-  const calculateMarketAnalysis = (ventes: Vente[], clients: Client[]) => {
+  const calculateMarketAnalysis = (ventes: Vente[]) => {
     const totalMarketSize = 1000000; // Simulated market size
     const marketShare = (ventes.reduce((sum, v) => sum + (v.montant || 0), 0) / totalMarketSize) * 100;
     
@@ -542,7 +542,7 @@ export default function StatistiquesPage() {
     return { marketShare, competitorAnalysis, marketTrends };
   };
 
-  const calculateRiskAssessment = (ventes: Vente[], stock: StockItem[], clients: Client[]) => {
+  const calculateRiskAssessment = (stock: StockItem[]) => {
     const creditRisk = 15; // Simulated credit risk percentage
     const inventoryRisk = stock.filter(s => s.quantite < 5).length / stock.length * 100;
     const marketRisk = 25; // Simulated market risk
@@ -774,7 +774,7 @@ export default function StatistiquesPage() {
                   onChange={(e) => {
                     const range = e.target.value;
                     let startDate = new Date();
-                    let endDate = new Date();
+                    const endDate = new Date();
                     
                     switch(range) {
                       case '3months':
