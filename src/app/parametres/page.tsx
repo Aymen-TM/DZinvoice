@@ -13,7 +13,6 @@ import {
   FiEdit3,
   FiEye,
   FiEyeOff,
-  FiDownload,
   FiTrash2,
   FiRefreshCw,
   FiAlertTriangle
@@ -88,33 +87,6 @@ export default function ParametresPage() {
     }
   };
 
-  const handleExportSettings = () => {
-    const settingsJson = exportSettings();
-    const blob = new Blob([settingsJson], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'dzinvoice-settings.json';
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleImportSettings = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          importSettings(e.target?.result as string);
-          setMessage({ type: 'success', text: 'Paramètres importés avec succès!' });
-        } catch {
-          setMessage({ type: 'error', text: 'Erreur lors de l\'import' });
-        }
-      };
-      reader.readAsText(file);
-    }
-  };
-
   const handleResetSettings = () => {
     if (confirm('Êtes-vous sûr de vouloir réinitialiser tous les paramètres?')) {
       resetToDefaults();
@@ -165,7 +137,7 @@ export default function ParametresPage() {
         }
       }
       setMessage({ type: 'success', text: 'Données restaurées avec succès !' });
-    } catch (e) {
+    } catch {
       setMessage({ type: 'error', text: 'Erreur lors de la restauration du fichier de sauvegarde.' });
     }
   };
