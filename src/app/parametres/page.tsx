@@ -177,7 +177,7 @@ export default function ParametresPage() {
             {activeTab === 'company' && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">Informations de l'entreprise</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">Informations de l&apos;entreprise</h3>
                   <button
                     onClick={() => setIsEditing(!isEditing)}
                     className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -190,7 +190,7 @@ export default function ParametresPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Logo Upload */}
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Logo de l'entreprise</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Logo de l&apos;entreprise</label>
                     <div className="flex items-center space-x-4">
                       {companySettings.logo && (
                         <Image
@@ -212,7 +212,7 @@ export default function ParametresPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Nom de l'entreprise</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Nom de l&apos;entreprise</label>
                     <input
                       type="text"
                       value={companySettings.name}
@@ -433,7 +433,7 @@ export default function ParametresPage() {
                       <option value="Africa/Casablanca">Maroc (UTC+0/+1)</option>
                       <option value="Africa/Tunis">Tunisie (UTC+1)</option>
                       <option value="Africa/Dakar">Sénégal (UTC+0)</option>
-                      <option value="Africa/Abidjan">Côte d'Ivoire (UTC+0)</option>
+                      <option value="Africa/Abidjan">Côte d&apos;Ivoire (UTC+0)</option>
                       <option value="Europe/Paris">France (UTC+1/+2)</option>
                       <option value="UTC">UTC</option>
                     </select>
