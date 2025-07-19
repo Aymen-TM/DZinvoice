@@ -15,6 +15,7 @@ import { ERP_MENU_ITEMS, DEFAULT_CLIENT_FORM, DEFAULT_ARTICLE_FORM, DEFAULT_ACHA
 import localforage from 'localforage';
 import { generateInvoicePDF } from '@/utils/pdfGenerator';
 import { Suspense } from "react";
+import ERPTable from '@/components/ERPTable';
 
 const TOOLBAR_BUTTONS = [
   { key: "new", label: "New" },
@@ -260,11 +261,13 @@ function AccueilERPTest() {
     console.log('achatForm.articles changed:', achatForm.articles);
   }, [achatForm.articles]);
 
+  // Sync activeMenu with ?tab=... in the URL
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ["tiers", "articles", "achat", "stock", "ventes"].includes(tab)) {
+    if (tab && tab !== activeMenu) {
       setActiveMenu(tab);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   // Handlers for reference field
@@ -815,8 +818,14 @@ function AccueilERPTest() {
         setVisibleColumns(columns); // fallback to all columns
       }
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeMenu, columns]);
+
+  // Always show all columns if visibleColumns is empty (prevents all columns hidden)
+  useEffect(() => {
+    if (visibleColumns.length === 0 && columns.length > 0) {
+      setVisibleColumns(columns);
+    }
+  }, [visibleColumns, columns]);
 
   // Save visibleColumns to localForage when it changes
   useEffect(() => {
@@ -998,7 +1007,10 @@ function AccueilERPTest() {
               <button
                 key={item.key}
                 className={`px-3 sm:px-4 py-2.5 sm:py-2 font-semibold text-xs sm:text-sm rounded-xl transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 ${activeMenu === item.key ? "bg-[var(--primary)] text-white shadow" : "text-[var(--primary-dark)] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)]"}`}
-                onClick={() => setActiveMenu(item.key)}
+                onClick={() => {
+                  setActiveMenu(item.key);
+                  router.push(`/erp?tab=${item.key}`);
+                }}
               >
                 {item.label}
               </button>
@@ -1347,11 +1359,11 @@ function AccueilERPTest() {
                   </div>
                   <div>
                     <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">Prix Achat HT</label>
-                    <input name="prixAchat" type="number" value={articleForm.prixAchat} onChange={handleArticleChange} className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm" placeholder="Prix Achat HT" />
+                    <input name="prixAchat" type="number" value={articleForm.prixAchat ?? 0} onChange={handleArticleChange} className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm" placeholder="Prix Achat HT" />
                   </div>
                   <div>
                     <label className="block font-semibold mb-2 text-[var(--primary-dark)] text-sm">Prix Vente HT</label>
-                    <input name="prixVente" type="number" value={articleForm.prixVente} onChange={handleArticleChange} className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm" placeholder="Prix Vente HT" />
+                    <input name="prixVente" type="number" value={articleForm.prixVente ?? 0} onChange={handleArticleChange} className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition text-sm" placeholder="Prix Vente HT" />
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 px-4 sm:px-6 pb-4 sm:pb-6 pt-2 border-t border-[var(--primary)]/20 bg-gradient-to-r from-[var(--primary)]/5 to-[var(--primary)]/10 justify-end sticky bottom-0 bg-[var(--card)] z-10">
@@ -1392,7 +1404,7 @@ function AccueilERPTest() {
                           <div className="w-full md:w-40 relative" ref={el => { achatArticleRefInputRefs.current[idx] = el; }}>
                             <input
                               type="text"
-                              value={art.ref}
+                              value={art.ref ?? ''}
                               onChange={e => handleAchatArticleRefSearchChange(idx, e.target.value)}
                               onFocus={() => handleAchatArticleRefInputFocus(idx)}
                               className="w-full px-3 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition"
@@ -1417,7 +1429,7 @@ function AccueilERPTest() {
                           <div className="w-full md:w-72 flex-1 relative" ref={el => { achatArticleDesInputRefs.current[idx] = el; }}>
                             <input
                               type="text"
-                              value={art.designation}
+                              value={art.designation ?? ''}
                               onChange={e => handleAchatArticleDesSearchChange(idx, e.target.value)}
                               onFocus={() => handleAchatArticleDesInputFocus(idx)}
                               className="w-full px-3 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition"
@@ -1442,7 +1454,7 @@ function AccueilERPTest() {
                           <input
                             type="number"
                             min="1"
-                            value={art.quantite}
+                            value={art.quantite ?? 1}
                             onChange={e => handleAchatItemChange(idx, 'quantite', e.target.value)}
                             className="w-24 px-3 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition"
                             placeholder="Quantité"
@@ -1450,7 +1462,7 @@ function AccueilERPTest() {
                           {/* Depot Input */}
                           <input
                             type="text"
-                            value={art.depot}
+                            value={art.depot ?? ''}
                             onChange={e => handleAchatDepotSearchChange(idx, e.target.value)}
                             onFocus={() => handleAchatDepotInputFocus(idx)}
                             className="w-full md:w-56 px-3 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition"
@@ -1475,7 +1487,7 @@ function AccueilERPTest() {
                             type="number"
                             min="0"
                             step="0.01"
-                            value={art.prixAchat || ''}
+                            value={art.prixAchat ?? 0}
                             onChange={e => handleAchatItemChange(idx, 'prixAchat', e.target.value)}
                             className="w-32 px-3 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-[var(--input)] placeholder-gray-400 placeholder-opacity-100 transition"
                             placeholder="Prix Achat"
@@ -1499,236 +1511,67 @@ function AccueilERPTest() {
             </div>
           )}
           {/* --- TABLE --- */}
-          {/* Responsive table wrapper */}
-          <div className="overflow-x-auto w-full mt-4 rounded-2xl border-2 border-[var(--primary)]/30 shadow-xl ipad:rounded-xl ipad:border ipad:mt-2">
-            <div className="min-w-full overflow-visible">
-              <table className="w-full text-xs sm:text-sm ipad:text-base rounded-2xl overflow-visible border-separate border-spacing-0">
-                <thead className="bg-gradient-to-r from-[var(--primary)]/20 to-[var(--primary)]/10 border-b-2 border-[var(--primary)]/30 sticky top-0 z-20">
-                  <tr>
-                    {columns.map((col, colIdx) =>
-                      visibleColumns.includes(col) ? (
-                        <th
-                          key={col}
-                          className="px-2 sm:px-4 py-3 sm:py-4 text-left font-bold text-[var(--primary-dark)] uppercase tracking-wider bg-[var(--primary)]/10 border-b-2 border-[var(--primary)]/30 first:rounded-tl-2xl text-xs sm:text-sm cursor-pointer select-none relative sticky top-0 z-10"
-                          onClick={() => {
-                            if (sortColumn === col) {
-                              setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-                            } else {
-                              setSortColumn(col);
-                              setSortDirection('asc');
-                            }
-                          }}
-                        >
-                          <div className="flex items-center justify-between w-full">
-                            <span className="flex items-center">
-                              {col}
-                              {sortColumn === col && (
-                                <span className="ml-1 align-middle text-[10px]">
-                                  {sortDirection === 'asc' ? '▲' : '▼'}
-                                </span>
-                              )}
-                            </span>
-                            <span className="relative">
-                              <button
-                                type="button"
-                                className={`ml-2 inline-flex items-center justify-center w-5 h-5 rounded hover:bg-[var(--primary)]/20 transition filter-dropdown ${(filters[col] && filters[col].length > 0) ? 'text-[var(--primary)]' : 'text-gray-400'}`}
-                                onClick={e => { e.stopPropagation(); setFilterDropdownOpen(filterDropdownOpen === col ? null : col); setPendingFilters(filters); }}
-                                title="Filtrer"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707l-6.414 6.414A2 2 0 0013 14.586V19a1 1 0 01-1.447.894l-2-1A1 1 0 019 18v-3.414a2 2 0 00-.586-1.414L2 6.707A1 1 0 012 6V4z" />
-                                </svg>
-                              </button>
-                              {filterDropdownOpen === col && (
-                                <div className="absolute z-50 right-0 sm:w-56 w-[90vw] min-w-[10rem] bg-white border border-[var(--primary)]/20 rounded-lg shadow-lg p-2 filter-dropdown">
-                                  <div className="mb-2">
-                                    <input
-                                      type="text"
-                                      value={filterSearch[col] || ''}
-                                      onChange={e => setFilterSearch(s => ({ ...s, [col]: e.target.value }))}
-                                      placeholder="Rechercher..."
-                                      className="w-full px-2 py-1 border border-[var(--primary)]/20 rounded text-xs bg-white/70 focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition"
-                                    />
-                                  </div>
-                                  <div className="max-h-40 overflow-y-auto mb-2">
-                                    <label className="flex items-center px-2 py-1 cursor-pointer text-xs">
-                                      <input
-                                        type="checkbox"
-                                        checked={pendingFilters[col]?.length === getUniqueColumnValues(col, filteredSortedRows, colIdx, filterSearch[col] || '').length}
-                                        onChange={e => {
-                                          if (e.target.checked) {
-                                            setPendingFilters(f => ({ ...f, [col]: getUniqueColumnValues(col, filteredSortedRows, colIdx, filterSearch[col] || '') }));
-                                          } else {
-                                            setPendingFilters(f => ({ ...f, [col]: [] }));
-                                          }
-                                        }}
-                                      />
-                                      <span className="ml-2">(Tout sélectionner)</span>
-                                    </label>
-                                    {getUniqueColumnValues(col, filteredSortedRows, colIdx, filterSearch[col] || '').map((val: string) => (
-                                      <label key={val} className="flex items-center px-2 py-1 cursor-pointer text-xs">
-                                        <input
-                                          type="checkbox"
-                                          checked={pendingFilters[col]?.includes(val)}
-                                          onChange={e => {
-                                            setPendingFilters(f => {
-                                              const prev = f[col] || [];
-                                              if (e.target.checked) {
-                                                return { ...f, [col]: [...prev, val] };
-                                              } else {
-                                                return { ...f, [col]: prev.filter(v => v !== val) };
-                                              }
-                                            });
-                                          }}
-                                        />
-                                        <span className="ml-2">{val}</span>
-                                      </label>
-                                    ))}
-                                  </div>
-                                  <div className="flex justify-between gap-2 mt-2">
-                                    <button
-                                      className="flex-1 px-2 py-1 rounded bg-[var(--primary)]/10 text-[var(--primary)] text-xs font-semibold hover:bg-[var(--primary)]/20"
-                                      onClick={() => { setFilters(pendingFilters); setFilterDropdownOpen(null); }}
-                                    >OK</button>
-                                    <button
-                                      className="flex-1 px-2 py-1 rounded bg-gray-100 text-gray-600 text-xs font-semibold hover:bg-gray-200"
-                                      onClick={() => { setPendingFilters(f => ({ ...f, [col]: [] })); setFilters(f => ({ ...f, [col]: [] })); setFilterDropdownOpen(null); }}
-                                    >Effacer</button>
-                                  </div>
-                                </div>
-                              )}
-                            </span>
-                          </div>
-                        </th>
-                      ) : null
-                    )}
-                    {(activeMenu === "tiers" || activeMenu === "articles" || activeMenu === "achat" || activeMenu === "stock" || activeMenu === "ventes") && (
-                      <th className="px-4 py-4 text-left font-bold text-[var(--primary-dark)] uppercase tracking-wider bg-[var(--primary)]/10 border-b-2 border-[var(--primary)]/30 last:rounded-tr-2xl text-xs sm:text-sm sticky top-0 z-10">Action</th>
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredSortedRows.length === 0 ? (
-                    <tr>
-                      <td colSpan={columns.length + ((activeMenu === "tiers" || activeMenu === "articles" || activeMenu === "achat" || activeMenu === "stock" || activeMenu === "ventes") ? 1 : 0)} className="text-center text-[var(--muted)] py-8 text-sm">Aucune donnée</td>
-                    </tr>
-                  ) : (
-                    filteredSortedRows.map((row, idx) => (
-                      <tr key={idx} className={
-                        `transition-colors duration-200 ${idx % 2 === 0 ? "bg-white/90" : "bg-[var(--table-row-alt)]/80"} hover:bg-[var(--primary)]/10 border-b border-[var(--primary)]/10`
-                      }>
-                        {row.map((cell, i) =>
-                          visibleColumns.includes(columns[i]) ? (
-                            <td key={i} className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm border-b border-[var(--primary)]/10 first:rounded-bl-2xl last:rounded-br-2xl">
-                              {cell}
-                            </td>
-                          ) : null
-                        )}
-                        {activeMenu === "tiers" && (
-                          <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
-                            <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
-                              <button
-                                className="px-2 py-1.5 sm:py-1 text-xs bg-[var(--warning)]/10 text-[var(--warning)] rounded hover:bg-[var(--warning)]/20 transition"
-                                onClick={() => handleEditClient(clients[idx].id)}
-                              >
-                                Éditer
-                              </button>
-                              <button
-                                className="px-2 py-1.5 sm:py-1 text-xs bg-[var(--danger)]/10 text-[var(--danger)] rounded hover:bg-[var(--danger)]/20 transition"
-                                onClick={() => handleDeleteClient(idx)}
-                              >
-                                Supprimer
-                              </button>
-                            </div>
-                          </td>
-                        )}
-                        {activeMenu === "articles" && (
-                          <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
-                            <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
-                              <button
-                                className="px-2 py-1.5 sm:py-1 text-xs bg-[var(--warning)]/10 text-[var(--warning)] rounded hover:bg-[var(--warning)]/20 transition"
-                                onClick={() => handleEditArticle(idx)}
-                              >
-                                Éditer
-                              </button>
-                              <button
-                                className="px-2 py-1.5 sm:py-1 text-xs bg-[var(--danger)]/10 text-[var(--danger)] rounded hover:bg-[var(--danger)]/20 transition"
-                                onClick={() => handleDeleteArticle(idx)}
-                              >
-                                Supprimer
-                              </button>
-                            </div>
-                          </td>
-                        )}
-                        {activeMenu === "achat" && (
-                          <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
-                            <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
-                              <button
-                                className="px-2 py-1.5 sm:py-1 text-xs bg-[var(--warning)]/10 text-[var(--warning)] rounded hover:bg-[var(--warning)]/20 transition"
-                                onClick={() => handleEditAchat(idx)}
-                              >
-                                Éditer
-                              </button>
-                              <button
-                                className="px-2 py-1.5 sm:py-1 text-xs bg-[var(--danger)]/10 text-[var(--danger)] rounded hover:bg-[var(--danger)]/20 transition"
-                                onClick={() => handleDeleteAchat(idx)}
-                              >
-                                Supprimer
-                              </button>
-                            </div>
-                          </td>
-                        )}
-                        {activeMenu === "stock" && (
-                          <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
-                            <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
-                              <button
-                                className="px-2 py-1.5 sm:py-1 text-xs bg-[var(--danger)]/10 text-[var(--danger)] rounded hover:bg-[var(--danger)]/20 transition"
-                                onClick={() => handleDeleteStock(idx)}
-                              >
-                                Supprimer
-                              </button>
-                            </div>
-                          </td>
-                        )}
-                                              {activeMenu === "ventes" && (
-                        <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
-                          <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
-                            <button
-                              className="px-2 py-1.5 sm:py-1 text-xs bg-[var(--warning)]/10 text-[var(--warning)] rounded hover:bg-[var(--warning)]/20 transition"
-                              onClick={() => handleEditVente(ventes[idx].id)}
-                            >
-                              Éditer
-                            </button>
-                            <button
-                              className="px-2 py-1.5 sm:py-1 text-xs bg-[var(--danger)]/10 text-[var(--danger)] rounded hover:bg-[var(--danger)]/20 transition"
-                              onClick={() => handleDeleteVente(idx)}
-                            >
-                              Supprimer
-                            </button>
-                            <button
-                              className="px-2 py-1.5 sm:py-1 text-xs bg-[var(--primary)]/10 text-[var(--primary)] rounded hover:bg-[var(--primary)]/20 transition flex items-center gap-1"
-                              onClick={() => handleDownloadVentePDF(ventes[idx].id, idx)}
-                              disabled={pdfLoadingIdx === idx}
-                            >
-                              {pdfLoadingIdx === idx ? '...' : 'Télécharger'}
-                            </button>
-                            <button
-                              className="px-2 py-1.5 sm:py-1 text-xs bg-[var(--primary)]/10 text-[var(--primary)] rounded hover:bg-[var(--primary)]/20 transition flex items-center gap-1"
-                              onClick={() => handlePreviewVentePDF(ventes[idx].id, idx)}
-                              disabled={pdfLoadingIdx === idx}
-                            >
-                              {pdfLoadingIdx === idx ? '...' : 'Prévisualiser'}
-                            </button>
-                          </div>
-                        </td>
-                      )}
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <ERPTable
+            columns={columns}
+            rows={filteredSortedRows}
+            visibleColumns={visibleColumns}
+            activeMenu={activeMenu}
+            onEdit={(idx: number) => {
+              if (activeMenu === "tiers") handleEditClient(clients[idx].id);
+              if (activeMenu === "articles") handleEditArticle(idx);
+              if (activeMenu === "achat") handleEditAchat(idx);
+              if (activeMenu === "ventes") handleEditVente(ventes[idx].id);
+            }}
+            onDelete={(idx: number) => {
+              if (activeMenu === "tiers") handleDeleteClient(idx);
+              if (activeMenu === "articles") handleDeleteArticle(idx);
+              if (activeMenu === "achat") handleDeleteAchat(idx);
+              if (activeMenu === "stock") handleDeleteStock(idx);
+              if (activeMenu === "ventes") handleDeleteVente(idx);
+            }}
+            onDownloadPDF={handleDownloadVentePDF}
+            onPreviewPDF={handlePreviewVentePDF}
+            pdfLoadingIdx={pdfLoadingIdx}
+            sortColumn={sortColumn}
+            sortDirection={sortDirection}
+            onSort={(col: string) => {
+              if (sortColumn === col) {
+                setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+              } else {
+                setSortColumn(col);
+                setSortDirection('asc');
+              }
+            }}
+            filters={filters}
+            filterDropdownOpen={filterDropdownOpen}
+            onFilterClick={(col: string) => {
+              setFilterDropdownOpen(filterDropdownOpen === col ? null : col);
+              setPendingFilters(filters);
+            }}
+            filterSearch={filterSearch}
+            onFilterSearchChange={(col: string, value: string) => setFilterSearch(s => ({ ...s, [col]: value }))}
+            pendingFilters={pendingFilters}
+            onPendingFilterChange={(col: string, value: string, checked: boolean) => {
+              setPendingFilters(f => {
+                const prev = f[col] || [];
+                if (checked) {
+                  return { ...f, [col]: [...prev, value] };
+                } else {
+                  return { ...f, [col]: prev.filter(v => v !== value) };
+                }
+              });
+            }}
+            onFilterApply={() => {
+              setFilters(pendingFilters);
+              setFilterDropdownOpen(null);
+            }}
+            onFilterClear={(col: string) => {
+              setPendingFilters(f => ({ ...f, [col]: [] }));
+              setFilters(f => ({ ...f, [col]: [] }));
+              setFilterDropdownOpen(null);
+            }}
+            getUniqueColumnValues={getUniqueColumnValues}
+          />
           {/* ...modals and dialogs: update to use new palette, spacing, and shadow... */}
         </div>
       </main>

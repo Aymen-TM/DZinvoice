@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React, { useState } from "react";
 import Link from "next/link";
@@ -8,6 +8,8 @@ const NAV_LINKS = [
   { name: "Mes Factures", href: "/" },
   { name: "Créer une facture", href: "/create-invoice" },
   { name: "ERP", href: "/erp" },
+  { name: "Historique", href: "/historique" },
+  { name: "Statistiques", href: "/statistiques" },
   { name: "Politique de confidentialité", href: "/privacy-policy" },
 ];
 
@@ -15,7 +17,7 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <nav className="fixed top-0 left-0 w-full bg-white shadow z-50">
+    <nav className="sticky top-0 bg-white shadow z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Brand */}

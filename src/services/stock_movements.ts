@@ -1,21 +1,36 @@
-// If not present, define the StockMovement type here or import from your types
-export interface StockMovement {
-  id: string;
-  articleRef: string;
-  quantity: number;
-  movementType: 'entree' | 'sortie';
-  relatedDocId: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
+import { StockItem } from '@/types/erp';
 import * as base from './localforageBase';
+import { logStockMovement } from './history';
 
 const TABLE = 'stock_movements';
 
+export interface StockMovement {
+  id: string;
+  itemId: string;
+  designation: string;
+  depot: string;
+  quantity: number;
+  movementType: 'in' | 'out';
+  date: string;
+  reason?: string;
+}
+
 export const getStockMovements = () => base.getAll<StockMovement>(TABLE);
 export const getStockMovement = (id: string) => base.getById<StockMovement>(TABLE, id);
-export const createStockMovement = (data: Omit<StockMovement, 'id' | 'createdAt' | 'updatedAt'>) => base.create<StockMovement>(TABLE, data);
+export const createStockMovement = async (data: Omit<StockMovement, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const newMovement = await base.create<StockMovement>(TABLE, data);
+  
+  // Log history
+  await logStockMovement(
+    newMovement.itemId,
+    newMovement.designation,
+    newMovement.depot,
+    newMovement.quantity,
+    newMovement.movementType
+  );
+  
+  return newMovement;
+};
 export const updateStockMovement = (id: string, data: Partial<StockMovement>) => base.update<StockMovement>(TABLE, id, data);
 export const deleteStockMovement = (id: string) => base.remove(TABLE, id);
 

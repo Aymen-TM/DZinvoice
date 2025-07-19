@@ -13,42 +13,46 @@ interface StoredInvoice {
   status?: string;
 }
 
+function getCurrentYearShort(): string {
+  return new Date().getFullYear().toString().slice(-2);
+}
+
+function formatInvoiceNumber(yearShort: string, number: number): string {
+  return `FV/${yearShort}-${number.toString().padStart(4, '0')}`;
+}
+
 export async function generateNextInvoiceNumber(): Promise<string> {
+  const yearShort = getCurrentYearShort();
   const invoices: StoredInvoice[] = (await localforage.getItem('invoices')) || [];
-  if (invoices.length === 0) {
-    return '1';
-  }
-  const invoiceNumbers = invoices
+  // Only consider invoices for the current year and matching the new format
+  const regex = new RegExp(`^FV/${yearShort}-\\d{4}$`);
+  const numbers = invoices
     .map((invoice: StoredInvoice) => invoice.id)
-    .filter((id: string) => {
-      const num = parseInt(id, 10);
-      return !isNaN(num) && num > 0;
-    })
-    .map((id: string) => parseInt(id, 10));
-  if (invoiceNumbers.length === 0) {
-    return '1';
-  }
-  invoiceNumbers.sort((a, b) => a - b);
-  // Find the smallest missing positive integer
+    .filter((id: string) => regex.test(id))
+    .map((id: string) => parseInt(id.split('-')[1], 10))
+    .filter((num) => !isNaN(num));
   let nextNumber = 1;
-  for (let i = 0; i < invoiceNumbers.length; i++) {
-    if (invoiceNumbers[i] !== nextNumber) {
-      break;
+  if (numbers.length > 0) {
+    numbers.sort((a, b) => a - b);
+    // Find the smallest missing positive integer
+    for (let i = 0; i < numbers.length; i++) {
+      if (numbers[i] !== i + 1) {
+        nextNumber = i + 1;
+        break;
+      }
+      nextNumber = numbers.length + 1;
     }
-    nextNumber++;
   }
-  return nextNumber.toString();
+  return formatInvoiceNumber(yearShort, nextNumber);
 }
 
 // Fallback sync version for SSR or initial render
 export function generateNextInvoiceNumberSync(): string {
-  return '1';
+  const yearShort = getCurrentYearShort();
+  return formatInvoiceNumber(yearShort, 1);
 }
 
 export function isValidInvoiceNumber(invoiceNumber: string): boolean {
-  if (!invoiceNumber || invoiceNumber.trim() === '') {
-    return false;
-  }
-  const num = parseInt(invoiceNumber, 10);
-  return !isNaN(num) && num > 0;
+  // FV/YY-NNNN
+  return /^FV\/\d{2}-\d{4}$/.test(invoiceNumber);
 } 
