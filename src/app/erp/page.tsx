@@ -811,12 +811,23 @@ function AccueilERPTest() {
 
   // Load visibleColumns from localForage on mount or when activeMenu/columns changes
   useEffect(() => {
+    if (columns.length === 0) return; // Don't load if columns aren't ready yet
+    
     localforage.getItem<string[]>(`erp_visible_columns_${activeMenu}`).then((saved) => {
       if (Array.isArray(saved) && saved.length > 0) {
-        setVisibleColumns(saved);
+        // Validate that all saved columns still exist in current columns
+        const validSavedColumns = saved.filter(col => columns.includes(col));
+        if (validSavedColumns.length > 0) {
+          setVisibleColumns(validSavedColumns);
+        } else {
+          setVisibleColumns(columns); // fallback to all columns
+        }
       } else {
         setVisibleColumns(columns); // fallback to all columns
       }
+    }).catch(() => {
+      // If there's an error loading, default to all columns
+      setVisibleColumns(columns);
     });
   }, [activeMenu, columns]);
 
@@ -1123,10 +1134,19 @@ function AccueilERPTest() {
                     </label>
                   ))}
                 </div>
-                <button
-                  className="mt-2 w-full px-2 py-1 rounded bg-gray-100 text-gray-600 text-xs font-semibold hover:bg-gray-200"
-                  onClick={() => setColumnDropdownOpen(false)}
-                >Fermer</button>
+                <div className="flex gap-2 mt-2">
+                  <button
+                    className="flex-1 px-2 py-1 rounded bg-blue-100 text-blue-600 text-xs font-semibold hover:bg-blue-200"
+                    onClick={() => {
+                      setVisibleColumns(columns);
+                      setColumnDropdownOpen(false);
+                    }}
+                  >Réinitialiser</button>
+                  <button
+                    className="flex-1 px-2 py-1 rounded bg-gray-100 text-gray-600 text-xs font-semibold hover:bg-gray-200"
+                    onClick={() => setColumnDropdownOpen(false)}
+                  >Fermer</button>
+                </div>
               </div>
             )}
           </div>
