@@ -17,7 +17,7 @@ function CreateInvoiceContent() {
   const searchParams = useSearchParams();
   const editInvoiceId = searchParams.get('edit');
   const isEditing = !!editInvoiceId;
-  const { companySettings, invoiceSettings, generateInvoiceNumber, formatCurrency, userPreferences } = useSettings();
+  const { companySettings, invoiceSettings, generateInvoiceNumber, userPreferences } = useSettings();
 
   const [company, setCompany] = useState<Company>({
     companyName: companySettings.name,
