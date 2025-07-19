@@ -37,7 +37,7 @@ export async function remove(table: string, id: string): Promise<void> {
 
 export async function setAll<T extends {id: string}>(table: string, items: T[]): Promise<void> {
   await localforage.setItem(table, items);
-}
+} 
 
 // Utility: Export all tables as a single object
 export async function exportAllTables() {

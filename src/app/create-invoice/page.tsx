@@ -17,7 +17,7 @@ function CreateInvoiceContent() {
   const searchParams = useSearchParams();
   const editInvoiceId = searchParams.get('edit');
   const isEditing = !!editInvoiceId;
-  const { companySettings, invoiceSettings, generateInvoiceNumber, userPreferences } = useSettings();
+  const { companySettings, invoiceSettings, generateInvoiceNumber, formatCurrency } = useSettings();
 
   const [company, setCompany] = useState<Company>({
     companyName: companySettings.name,
@@ -194,19 +194,6 @@ function CreateInvoiceContent() {
     totals,
   };
 
-  const currency = invoiceSettings?.defaultCurrency || 'DZD';
-  const language = userPreferences?.language || 'fr';
-
-  function formatCurrencySync(amount: number) {
-    const locale = language === 'fr' ? 'fr-DZ' : 'en-US';
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden pt-20">
       {/* Éléments d'arrière-plan animés */}
@@ -270,8 +257,8 @@ function CreateInvoiceContent() {
               onItemsChange={setItems} 
               totals={totals} 
               onTotalsChange={setTotals}
-              currency={currency}
-              formatCurrency={formatCurrencySync}
+              currency={invoiceSettings.defaultCurrency}
+              formatCurrency={formatCurrency}
             />
           </div>
 

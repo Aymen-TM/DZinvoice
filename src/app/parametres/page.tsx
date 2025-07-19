@@ -13,6 +13,7 @@ import {
   FiEdit3,
   FiEye,
   FiEyeOff,
+  FiDownload,
   FiTrash2,
   FiRefreshCw,
   FiAlertTriangle
@@ -21,12 +22,14 @@ import { useSettings } from '../../hooks/useSettings';
 import Image from 'next/image';
 import { exportAllTables, setAll } from '../../services/localforageBase';
 import SettingsService from '../../services/settingsService';
+import localforage from 'localforage';
 
 export default function ParametresPage() {
   const [activeTab, setActiveTab] = useState('company');
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const {
     settings,
@@ -36,6 +39,7 @@ export default function ParametresPage() {
     updateUserPreferences,
     updateSystemSettings,
     exportSettings,
+    importSettings,
     resetToDefaults
   } = useSettings();
 
@@ -83,6 +87,33 @@ export default function ParametresPage() {
         });
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleExportSettings = () => {
+    const settingsJson = exportSettings();
+    const blob = new Blob([settingsJson], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'dzinvoice-settings.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportSettings = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          importSettings(e.target?.result as string);
+          setMessage({ type: 'success', text: 'Paramètres importés avec succès!' });
+        } catch {
+          setMessage({ type: 'error', text: 'Erreur lors de l\'import' });
+        }
+      };
+      reader.readAsText(file);
     }
   };
 
@@ -136,9 +167,36 @@ export default function ParametresPage() {
         }
       }
       setMessage({ type: 'success', text: 'Données restaurées avec succès !' });
-    } catch {
+    } catch (e) {
       setMessage({ type: 'error', text: 'Erreur lors de la restauration du fichier de sauvegarde.' });
     }
+  };
+
+  // Add handler to delete all data and settings
+  const handleDeleteAllData = async () => {
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteAllData = async () => {
+    // Remove all known tables and settings
+    const tables = [
+      'clients',
+      'articles',
+      'achats',
+      'ventes',
+      'stock_items',
+      'vente_items',
+      'achat_items',
+      'stock_movements',
+      'history',
+      'appSettings',
+    ];
+    for (const table of tables) {
+      await localforage.removeItem(table);
+    }
+    setMessage({ type: 'success', text: 'Toutes les données et paramètres ont été supprimés.' });
+    setShowDeleteDialog(false);
+    window.location.reload();
   };
 
   const tabs = [
@@ -710,18 +768,47 @@ export default function ParametresPage() {
                 </div>
 
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-red-800 mb-2">Réinitialiser les paramètres</h4>
+                  <h4 className="text-sm font-medium text-red-800 mb-2">Supprimer toutes les données</h4>
                   <p className="text-sm text-red-700 mb-4">
-                    Attention : Cette action réinitialisera tous les paramètres aux valeurs par défaut.
+                    Attention : Cette action supprimera <b>toutes</b> vos données et paramètres. Cette opération est irréversible.
                   </p>
                   <button
-                    onClick={handleResetSettings}
+                    onClick={handleDeleteAllData}
                     className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
                   >
                     <FiTrash2 className="mr-2" />
-                    Réinitialiser
+                    Supprimer toutes les données
                   </button>
                 </div>
+
+                {/* Delete confirmation dialog */}
+                {showDeleteDialog && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                    <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-xs flex flex-col items-center">
+                      <div className="mb-4">
+                        <svg className="w-12 h-12 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </div>
+                      <div className="text-lg font-bold text-red-700 mb-2 text-center">Confirmer la suppression</div>
+                      <div className="text-sm text-gray-600 mb-6 text-center">Êtes-vous sûr de vouloir supprimer <b>toutes</b> les données et paramètres ? Cette action est irréversible.</div>
+                      <div className="flex gap-2 w-full">
+                        <button
+                          className="w-full px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold shadow hover:bg-gray-300 transition-colors"
+                          onClick={() => setShowDeleteDialog(false)}
+                        >
+                          Annuler
+                        </button>
+                        <button
+                          className="w-full px-4 py-2 bg-red-600 text-white rounded-lg font-semibold shadow hover:bg-red-700 transition-colors"
+                          onClick={confirmDeleteAllData}
+                        >
+                          Supprimer
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
