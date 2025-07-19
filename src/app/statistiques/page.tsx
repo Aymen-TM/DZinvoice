@@ -37,8 +37,6 @@ import {
   FiRefreshCw,
   FiEye,
   FiEyeOff,
-  FiGrid,
-  FiList,
   FiSettings,
   FiCalendar as FiCalendarIcon
 } from "react-icons/fi";
