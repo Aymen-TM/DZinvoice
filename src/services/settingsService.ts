@@ -58,7 +58,7 @@ class SettingsService {
       logo: ''
     },
     invoiceSettings: {
-      defaultCurrency: 'DA',
+      defaultCurrency: 'DZD', // Code ISO officiel requis par Intl.NumberFormat
       taxRate: 19,
       paymentTerms: '30 jours',
       invoicePrefix: 'FV/25',
