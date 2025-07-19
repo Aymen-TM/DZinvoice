@@ -331,8 +331,12 @@ export default function StatistiquesPage() {
         marketAnalysis,
         riskAssessment
       });
-    } catch (error) {
-      console.error('Error loading statistics:', error);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Error loading statistics:', error.message);
+      } else {
+        console.error('Error loading statistics:', error);
+      }
     } finally {
       setLoading(false);
     }
@@ -810,7 +814,7 @@ export default function StatistiquesPage() {
                 onChange={(e) => setFilters({...filters, viewMode: e.target.value as 'overview' | 'detailed' | 'comparison'})}
                 className="px-4 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white w-full sm:w-auto"
               >
-                <option value="overview">Vue d'ensemble</option>
+                <option value="overview">Vue d&apos;ensemble</option>
                 <option value="detailed">Détail avancé</option>
                 <option value="comparison">Comparaison</option>
               </select>
