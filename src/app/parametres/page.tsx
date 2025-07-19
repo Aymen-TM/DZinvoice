@@ -7,24 +7,18 @@ import {
   FiHome, 
   FiFileText, 
   FiShield, 
-  FiBell, 
-  FiDroplet, 
   FiDatabase,
   FiSave,
-  FiX,
   FiCheck,
   FiEdit3,
   FiEye,
   FiEyeOff,
   FiDownload,
-  FiUpload,
   FiTrash2,
   FiRefreshCw,
-  FiInfo,
   FiAlertTriangle
 } from 'react-icons/fi';
 import { useSettings } from '../../hooks/useSettings';
-import { CompanySettings, InvoiceSettings, UserPreferences, SystemSettings } from '../../services/settingsService';
 
 export default function ParametresPage() {
   const [activeTab, setActiveTab] = useState('company');
