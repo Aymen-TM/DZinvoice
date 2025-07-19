@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
-import { Bar, Pie, Line, Doughnut, Radar, Scatter } from "react-chartjs-2";
+import { Bar, Pie, Line, Radar, Scatter } from "react-chartjs-2";
 import { 
   Chart, 
   CategoryScale, 
@@ -18,22 +18,13 @@ import {
 import { 
   FiUsers, 
   FiShoppingCart, 
-  FiFileText, 
   FiPackage, 
   FiTrendingUp, 
-  FiTrendingDown,
   FiDollarSign,
-  FiCalendar,
   FiBarChart,
-  FiPieChart,
-  FiActivity,
   FiTarget,
   FiAward,
   FiAlertCircle,
-  FiCheckCircle,
-  FiClock,
-  FiFilter,
-  FiDownload,
   FiRefreshCw,
   FiEyeOff,
   FiSettings,
@@ -978,7 +969,7 @@ export default function StatistiquesPage() {
           {/* Seasonal Trends */}
           <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
             <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6 flex items-center">
-              <FiCalendar className="mr-2 text-green-500" />
+              <FiCalendarIcon className="mr-2 text-green-500" />
               Tendances Saisonnières
             </h3>
             <div className="space-y-3 sm:space-y-4">

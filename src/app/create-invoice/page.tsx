@@ -8,7 +8,6 @@ import ClientInfo from '@/components/ClientInfo';
 import InvoiceMetaComponent from '@/components/InvoiceMeta';
 import ItemsList from '@/components/ItemsList';
 import GeneratePDFButton from '@/components/GeneratePDFButton';
-import { generateNextInvoiceNumber } from '@/utils/invoiceNumberGenerator';
 import { getCompleteInvoiceById } from '@/utils/invoiceStorage';
 import { getClients as getERPClients, setClients as setERPClients } from '@/utils/erpStorage';
 import type { Client as ERPClient } from '@/types/erp';
