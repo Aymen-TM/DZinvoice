@@ -425,7 +425,7 @@ export default function StatistiquesPage() {
     return dailyStats;
   };
 
-  const calculateClientSegments = (ventes: Vente[], clients: Client[]) => {
+  const calculateClientSegments = (ventes: Vente[]) => {
     const clientTotals = ventes.reduce((acc, vente) => {
       const clientName = vente.client || 'Client inconnu';
       if (!acc[clientName]) {
@@ -447,7 +447,7 @@ export default function StatistiquesPage() {
     return { vip, regular, new: newClients };
   };
 
-  const calculateProductAnalytics = (articles: Article[], stock: StockItem[], ventes: Vente[]) => {
+  const calculateProductAnalytics = (articles: Article[], stock: StockItem[]) => {
     const bestSellers = articles
       .map(article => ({
         name: article.designation,
@@ -500,7 +500,7 @@ export default function StatistiquesPage() {
     };
   };
 
-  const calculateOperationalMetrics = (ventes: Vente[], clients: Client[], stock: StockItem[]) => {
+  const calculateOperationalMetrics = (ventes: Vente[]) => {
     const totalOrders = ventes.length;
     const fulfilledOrders = ventes.filter(v => v.montant > 0).length;
     const orderFulfillmentRate = totalOrders > 0 ? (fulfilledOrders / totalOrders) * 100 : 0;

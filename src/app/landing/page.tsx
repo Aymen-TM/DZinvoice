@@ -4,14 +4,12 @@ import {
   DocumentTextIcon,
   DevicePhoneMobileIcon,
   ShieldCheckIcon,
-  EyeSlashIcon,
   WifiIcon,
   MegaphoneIcon,
   CheckCircleIcon,
   QuestionMarkCircleIcon,
   UserCircleIcon,
   ArrowRightIcon,
-  ChatBubbleLeftRightIcon,
   StarIcon,
 } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";

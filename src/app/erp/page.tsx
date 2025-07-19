@@ -6,7 +6,7 @@ import {
   getClients, setClients, getArticles, setArticles, 
   getAchats, setAchats, getStock, setStock 
 } from '@/utils/erpStorage';
-import { getVentes, setVentes, deleteInvoice, getCompleteInvoiceById, getCompleteInvoices, deleteCompleteInvoice } from '@/utils/invoiceStorage';
+import { getVentes, setVentes, getCompleteInvoiceById, getCompleteInvoices, deleteCompleteInvoice } from '@/utils/invoiceStorage';
 import { 
   exportClients, exportArticles, exportAchats, 
   exportStock, exportVentes 
@@ -999,7 +999,6 @@ function AccueilERPTest() {
     try {
       // Debug logging
       console.log('Looking for complete invoice with id:', id);
-      const allCompleteInvoices = await getCompleteInvoices();
       const invoice = await getCompleteInvoiceById(id);
       if (!invoice) {
         alert('Facture introuvable pour cette vente.');
