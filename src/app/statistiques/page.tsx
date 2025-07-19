@@ -293,8 +293,8 @@ export default function StatistiquesPage() {
       const productAnalytics = calculateProductAnalytics(articles, stock);
       const financialMetrics = calculateFinancialMetrics(filteredVentes, filteredAchats, articles);
       const operationalMetrics = calculateOperationalMetrics(filteredVentes);
-      const marketAnalysis = calculateMarketAnalysis(filteredVentes, clients);
-      const riskAssessment = calculateRiskAssessment(filteredVentes, stock, clients);
+      const marketAnalysis = calculateMarketAnalysis(filteredVentes);
+      const riskAssessment = calculateRiskAssessment(stock);
 
       setStatsData({
         totalVentes,
