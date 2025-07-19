@@ -37,12 +37,16 @@ export default function ParametresPage() {
     updateInvoiceSettings,
     updateUserPreferences,
     updateSystemSettings,
+    saveAllSettings,
     exportSettings,
-    importSettings,
-    resetToDefaults
+    formatCurrency,
+    formatDate,
+    generateInvoiceNumber,
+    companySettings,
+    invoiceSettings,
+    userPreferences,
+    systemSettings
   } = useSettings();
-
-  const { companySettings, invoiceSettings, userPreferences, systemSettings } = settings;
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -134,7 +138,7 @@ export default function ParametresPage() {
         }
       }
       setMessage({ type: 'success', text: 'Données restaurées avec succès !' });
-    } catch (e) {
+    } catch {
       setMessage({ type: 'error', text: 'Erreur lors de la restauration du fichier de sauvegarde.' });
     }
   };
