@@ -67,7 +67,7 @@ export default function ParametresPage() {
       setIsEditing(false);
       
       setTimeout(() => setMessage(null), 3000);
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: 'Erreur lors de la sauvegarde' });
     }
   };
