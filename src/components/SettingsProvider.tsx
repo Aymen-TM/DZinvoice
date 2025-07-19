@@ -55,13 +55,13 @@ export default function SettingsProvider({ children }: SettingsProviderProps) {
         root.classList.remove('dark');
       }
     }
-  }, [settingsHook.settings.userPreferences.theme]);
+  }, [settingsHook.settings, settingsHook.settings.userPreferences.theme]);
 
   // Apply language changes
   useEffect(() => {
     const { userPreferences } = settingsHook.settings;
     document.documentElement.lang = userPreferences.language;
-  }, [settingsHook.settings.userPreferences.language]);
+  }, [settingsHook.settings, settingsHook.settings.userPreferences.language]);
 
   // Apply timezone changes
   useEffect(() => {
@@ -71,7 +71,7 @@ export default function SettingsProvider({ children }: SettingsProviderProps) {
       // This will be used by date formatting functions
       localStorage.setItem('userTimezone', userPreferences.timezone);
     }
-  }, [settingsHook.settings.userPreferences.timezone]);
+  }, [settingsHook.settings, settingsHook.settings.userPreferences.timezone]);
 
   // Apply date format changes
   useEffect(() => {
@@ -79,7 +79,7 @@ export default function SettingsProvider({ children }: SettingsProviderProps) {
     if (typeof window !== 'undefined' && window.localStorage) {
       localStorage.setItem('dateFormat', userPreferences.dateFormat);
     }
-  }, [settingsHook.settings.userPreferences.dateFormat]);
+  }, [settingsHook.settings, settingsHook.settings.userPreferences.dateFormat]);
 
   // Apply notification settings
   useEffect(() => {
@@ -90,7 +90,7 @@ export default function SettingsProvider({ children }: SettingsProviderProps) {
         Notification.requestPermission();
       }
     }
-  }, [settingsHook.settings.userPreferences.notifications]);
+  }, [settingsHook.settings, settingsHook.settings.userPreferences.notifications]);
 
   // Apply session timeout
   useEffect(() => {
@@ -108,7 +108,7 @@ export default function SettingsProvider({ children }: SettingsProviderProps) {
 
       return () => clearTimeout(timeoutId);
     }
-  }, [settingsHook.settings.systemSettings.sessionTimeout]);
+  }, [settingsHook.settings, settingsHook.settings.systemSettings.sessionTimeout]);
 
   // Apply auto-save setting
   useEffect(() => {
@@ -122,7 +122,7 @@ export default function SettingsProvider({ children }: SettingsProviderProps) {
 
       return () => clearInterval(autoSaveInterval);
     }
-  }, [settingsHook.settings.systemSettings.autoSave]);
+  }, [settingsHook.settings, settingsHook.settings.systemSettings.autoSave]);
 
   return (
     <SettingsContext.Provider value={settingsHook}>
