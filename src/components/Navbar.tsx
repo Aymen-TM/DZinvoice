@@ -29,7 +29,7 @@ export default function Navbar() {
             <Link href="/" className="flex items-center space-x-2">
               <Image src="/globe.svg" alt="DZ Invoice Logo" className="h-8 w-8" width={32} height={32} />
               <span className="font-bold text-lg tracking-tight text-gray-900">
-                {companySettings.name || "DZ Invoice"}
+                {`FactureLibre${companySettings.name ? ' - ' + companySettings.name : ''}`}
               </span>
             </Link>
           </div>

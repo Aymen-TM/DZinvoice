@@ -7,25 +7,50 @@ import SettingsService, {
   SystemSettings 
 } from '../services/settingsService';
 
+const defaultSettings: AppSettings = {
+  companySettings: {
+    name: '', address: '', phone: '', email: '', website: '', taxNumber: '', logo: ''
+  },
+  invoiceSettings: {
+    defaultCurrency: 'DZD', taxRate: 19, paymentTerms: '', invoicePrefix: '', autoNumbering: true, defaultLanguage: 'fr'
+  },
+  userPreferences: {
+    theme: 'light', language: 'fr', timezone: '', dateFormat: 'DD/MM/YYYY', notifications: { email: true, browser: true, sound: false }
+  },
+  systemSettings: {
+    backupFrequency: 'daily', dataRetention: 365, autoSave: true, sessionTimeout: 30
+  }
+};
+
 export function useSettings() {
-  const [settings, setSettings] = useState<AppSettings>(SettingsService.getInstance().getSettings());
-  const [isLoading, setIsLoading] = useState(false);
+  const [settings, setSettings] = useState<AppSettings | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = SettingsService.getInstance().subscribe((newSettings) => {
-      setSettings(newSettings);
+    let mounted = true;
+    async function load() {
+      setIsLoading(true);
+      const loaded = await SettingsService.getInstance().getSettingsAsync();
+      if (mounted) {
+        setSettings(loaded);
+        setIsLoading(false);
+      }
+    }
+    load();
+    // Subscribe to changes
+    const unsubscribe = SettingsService.getInstance().subscribe(async () => {
+      const loaded = await SettingsService.getInstance().getSettingsAsync();
+      setSettings(loaded);
     });
-
-    return unsubscribe;
+    return () => { mounted = false; unsubscribe(); };
   }, []);
 
   const updateCompanySettings = useCallback(async (updates: Partial<CompanySettings>) => {
     setIsLoading(true);
     try {
       await SettingsService.getInstance().updateCompanySettings(updates);
-    } catch (error) {
-      console.error('Error updating company settings:', error);
-      throw error;
+      const loaded = await SettingsService.getInstance().getSettingsAsync();
+      setSettings(loaded);
     } finally {
       setIsLoading(false);
     }
@@ -35,9 +60,8 @@ export function useSettings() {
     setIsLoading(true);
     try {
       await SettingsService.getInstance().updateInvoiceSettings(updates);
-    } catch (error) {
-      console.error('Error updating invoice settings:', error);
-      throw error;
+      const loaded = await SettingsService.getInstance().getSettingsAsync();
+      setSettings(loaded);
     } finally {
       setIsLoading(false);
     }
@@ -47,9 +71,8 @@ export function useSettings() {
     setIsLoading(true);
     try {
       await SettingsService.getInstance().updateUserPreferences(updates);
-    } catch (error) {
-      console.error('Error updating user preferences:', error);
-      throw error;
+      const loaded = await SettingsService.getInstance().getSettingsAsync();
+      setSettings(loaded);
     } finally {
       setIsLoading(false);
     }
@@ -59,9 +82,8 @@ export function useSettings() {
     setIsLoading(true);
     try {
       await SettingsService.getInstance().updateSystemSettings(updates);
-    } catch (error) {
-      console.error('Error updating system settings:', error);
-      throw error;
+      const loaded = await SettingsService.getInstance().getSettingsAsync();
+      setSettings(loaded);
     } finally {
       setIsLoading(false);
     }
@@ -71,38 +93,46 @@ export function useSettings() {
     setIsLoading(true);
     try {
       await SettingsService.getInstance().saveAllSettings(newSettings);
-    } catch (error) {
-      console.error('Error saving all settings:', error);
-      throw error;
+      const loaded = await SettingsService.getInstance().getSettingsAsync();
+      setSettings(loaded);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const exportSettings = useCallback(() => {
-    return SettingsService.getInstance().exportSettings();
+  const exportSettings = useCallback(async () => {
+    return await SettingsService.getInstance().exportSettingsAsync();
   }, []);
 
-  const importSettings = useCallback((jsonString: string) => {
+  const importSettings = useCallback(async (jsonString: string) => {
+    setIsLoading(true);
     try {
-      SettingsService.getInstance().importSettings(jsonString);
-    } catch (error) {
-      console.error('Error importing settings:', error);
-      throw error;
+      await SettingsService.getInstance().importSettingsAsync(jsonString);
+      const loaded = await SettingsService.getInstance().getSettingsAsync();
+      setSettings(loaded);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
-  const resetToDefaults = useCallback(() => {
-    SettingsService.getInstance().resetToDefaults();
+  const resetToDefaults = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      await SettingsService.getInstance().resetToDefaultsAsync();
+      const loaded = await SettingsService.getInstance().getSettingsAsync();
+      setSettings(loaded);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   // Utility methods
-  const formatCurrency = useCallback((amount: number): string => {
-    return SettingsService.getInstance().formatCurrency(amount);
+  const formatCurrency = useCallback(async (amount: number): Promise<string> => {
+    return await SettingsService.getInstance().formatCurrency(amount);
   }, []);
 
-  const formatDate = useCallback((date: Date): string => {
-    return SettingsService.getInstance().formatDate(date);
+  const formatDate = useCallback(async (date: Date): Promise<string> => {
+    return await SettingsService.getInstance().formatDate(date);
   }, []);
 
   const generateInvoiceNumber = useCallback(async (): Promise<string> => {
@@ -110,7 +140,7 @@ export function useSettings() {
   }, []);
 
   return {
-    settings,
+    settings: settings || defaultSettings,
     isLoading,
     updateCompanySettings,
     updateInvoiceSettings,
@@ -123,10 +153,10 @@ export function useSettings() {
     formatCurrency,
     formatDate,
     generateInvoiceNumber,
-    // Direct access to settings
-    companySettings: settings.companySettings,
-    invoiceSettings: settings.invoiceSettings,
-    userPreferences: settings.userPreferences,
-    systemSettings: settings.systemSettings
+    // Direct access to settings (may be undefined until loaded)
+    companySettings: (settings || defaultSettings).companySettings,
+    invoiceSettings: (settings || defaultSettings).invoiceSettings,
+    userPreferences: (settings || defaultSettings).userPreferences,
+    systemSettings: (settings || defaultSettings).systemSettings
   };
 } 

@@ -37,4 +37,25 @@ export async function remove(table: string, id: string): Promise<void> {
 
 export async function setAll<T extends {id: string}>(table: string, items: T[]): Promise<void> {
   await localforage.setItem(table, items);
+}
+
+// Utility: Export all tables as a single object
+export async function exportAllTables() {
+  // List all known tables used in the app
+  const tables = [
+    'clients',
+    'articles',
+    'achats',
+    'ventes',
+    'stock_items',
+    'vente_items',
+    'achat_items',
+    'stock_movements',
+    'history',
+  ];
+  const result: Record<string, unknown[]> = {};
+  for (const table of tables) {
+    result[table] = await getAll(table);
+  }
+  return result;
 } 

@@ -1,3 +1,5 @@
+import localforage from 'localforage';
+
 export interface CompanySettings {
   name: string;
   address: string;
@@ -95,20 +97,23 @@ class SettingsService {
     return SettingsService.instance;
   }
 
-  private loadSettings(): AppSettings {
-    try {
-      // Check if we're in a browser environment
-      if (typeof window !== 'undefined' && window.localStorage) {
-        const savedSettings = localStorage.getItem('appSettings');
-        if (savedSettings) {
-          const parsed = JSON.parse(savedSettings);
-          // Merge with defaults to ensure all properties exist
+  private async loadSettingsAsync(): Promise<AppSettings> {
+    // Migration: If settings exist in localStorage but not in localforage, migrate them
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const localforageSettings = await localforage.getItem<AppSettings>('appSettings');
+      if (!localforageSettings) {
+        const localStorageSettings = localStorage.getItem('appSettings');
+        if (localStorageSettings) {
+          const parsed = JSON.parse(localStorageSettings);
+          await localforage.setItem('appSettings', parsed);
+          localStorage.removeItem('appSettings');
           return this.mergeWithDefaults(parsed);
         }
+      } else {
+        return this.mergeWithDefaults(localforageSettings);
       }
-    } catch (error) {
-      console.error('Error loading settings:', error);
     }
+    // If nothing found, use defaults
     return this.defaultSettings;
   }
 
@@ -121,73 +126,80 @@ class SettingsService {
     };
   }
 
-  public getSettings(): AppSettings {
-    return this.loadSettings();
+  // Synchronous fallback for legacy code (returns default if not loaded yet)
+  private loadSettings(): AppSettings {
+    // This is only used for initial state; async version is used for all real ops
+    return this.defaultSettings;
   }
 
-  public getCompanySettings(): CompanySettings {
-    return this.loadSettings().companySettings;
+  public async getSettingsAsync(): Promise<AppSettings> {
+    return await this.loadSettingsAsync();
   }
 
-  public getInvoiceSettings(): InvoiceSettings {
-    return this.loadSettings().invoiceSettings;
+  public async getCompanySettings(): Promise<CompanySettings> {
+    const settings = await this.loadSettingsAsync();
+    return settings.companySettings;
   }
 
-  public getUserPreferences(): UserPreferences {
-    return this.loadSettings().userPreferences;
+  public async getInvoiceSettings(): Promise<InvoiceSettings> {
+    const settings = await this.loadSettingsAsync();
+    return settings.invoiceSettings;
   }
 
-  public getSystemSettings(): SystemSettings {
-    return this.loadSettings().systemSettings;
+  public async getUserPreferences(): Promise<UserPreferences> {
+    const settings = await this.loadSettingsAsync();
+    return settings.userPreferences;
+  }
+
+  public async getSystemSettings(): Promise<SystemSettings> {
+    const settings = await this.loadSettingsAsync();
+    return settings.systemSettings;
   }
 
   public async updateCompanySettings(settings: Partial<CompanySettings>): Promise<void> {
-    const current = this.loadSettings();
+    const current = await this.loadSettingsAsync();
     const updated = {
       ...current,
       companySettings: { ...current.companySettings, ...settings }
     };
-    await this.saveSettings(updated);
+    await this.saveSettingsAsync(updated);
   }
 
   public async updateInvoiceSettings(settings: Partial<InvoiceSettings>): Promise<void> {
-    const current = this.loadSettings();
+    const current = await this.loadSettingsAsync();
     const updated = {
       ...current,
       invoiceSettings: { ...current.invoiceSettings, ...settings }
     };
-    await this.saveSettings(updated);
+    await this.saveSettingsAsync(updated);
   }
 
   public async updateUserPreferences(preferences: Partial<UserPreferences>): Promise<void> {
-    const current = this.loadSettings();
+    const current = await this.loadSettingsAsync();
     const updated = {
       ...current,
       userPreferences: { ...current.userPreferences, ...preferences }
     };
-    await this.saveSettings(updated);
+    await this.saveSettingsAsync(updated);
   }
 
   public async updateSystemSettings(settings: Partial<SystemSettings>): Promise<void> {
-    const current = this.loadSettings();
+    const current = await this.loadSettingsAsync();
     const updated = {
       ...current,
       systemSettings: { ...current.systemSettings, ...settings }
     };
-    await this.saveSettings(updated);
+    await this.saveSettingsAsync(updated);
   }
 
   public async saveAllSettings(settings: AppSettings): Promise<void> {
-    await this.saveSettings(settings);
+    await this.saveSettingsAsync(settings);
   }
 
-  private async saveSettings(settings: AppSettings): Promise<void> {
+  private async saveSettingsAsync(settings: AppSettings): Promise<void> {
     try {
-      // Check if we're in a browser environment
-      if (typeof window !== 'undefined' && window.localStorage) {
-        localStorage.setItem('appSettings', JSON.stringify(settings));
-        this.notifyListeners(settings);
-      }
+      await localforage.setItem('appSettings', settings);
+      this.notifyListeners(settings);
     } catch (error) {
       console.error('Error saving settings:', error);
       throw error;
@@ -212,58 +224,65 @@ class SettingsService {
     this.listeners.forEach(listener => listener(settings));
   }
 
-  public exportSettings(): string {
-    const settings = this.loadSettings();
+  public async exportSettingsAsync(): Promise<string> {
+    const settings = await this.loadSettingsAsync();
     return JSON.stringify(settings, null, 2);
   }
 
-  public importSettings(jsonString: string): void {
+  public async importSettingsAsync(jsonString: string): Promise<void> {
     try {
       const settings = JSON.parse(jsonString);
       const merged = this.mergeWithDefaults(settings);
-      this.saveSettings(merged);
+      await this.saveSettingsAsync(merged);
     } catch (error) {
       console.error('Error importing settings:', error);
       throw new Error('Invalid settings file format');
     }
   }
 
-  public resetToDefaults(): void {
-    this.saveSettings(this.defaultSettings);
+  public async resetToDefaultsAsync(): Promise<void> {
+    await this.saveSettingsAsync(this.defaultSettings);
   }
 
   // Utility methods for common settings
-  public getCurrency(): string {
-    return this.getInvoiceSettings().defaultCurrency;
+  public async getCurrency(): Promise<string> {
+    const settings = await this.loadSettingsAsync();
+    return settings.invoiceSettings.defaultCurrency;
   }
 
-  public getTaxRate(): number {
-    return this.getInvoiceSettings().taxRate;
+  public async getTaxRate(): Promise<number> {
+    const settings = await this.loadSettingsAsync();
+    return settings.invoiceSettings.taxRate;
   }
 
-  public getInvoicePrefix(): string {
-    return this.getInvoiceSettings().invoicePrefix;
+  public async getInvoicePrefix(): Promise<string> {
+    const settings = await this.loadSettingsAsync();
+    return settings.invoiceSettings.invoicePrefix;
   }
 
-  public getTheme(): 'light' | 'dark' | 'auto' {
-    return this.getUserPreferences().theme;
+  public async getTheme(): Promise<'light' | 'dark' | 'auto'> {
+    const settings = await this.loadSettingsAsync();
+    return settings.userPreferences.theme;
   }
 
-  public getLanguage(): string {
-    return this.getUserPreferences().language;
+  public async getLanguage(): Promise<string> {
+    const settings = await this.loadSettingsAsync();
+    return settings.userPreferences.language;
   }
 
-  public getDateFormat(): string {
-    return this.getUserPreferences().dateFormat;
+  public async getDateFormat(): Promise<string> {
+    const settings = await this.loadSettingsAsync();
+    return settings.userPreferences.dateFormat;
   }
 
-  public getTimezone(): string {
-    return this.getUserPreferences().timezone;
+  public async getTimezone(): Promise<string> {
+    const settings = await this.loadSettingsAsync();
+    return settings.userPreferences.timezone;
   }
 
-  public formatCurrency(amount: number): string {
-    const currency = this.getCurrency();
-    const locale = this.getLanguage() === 'fr' ? 'fr-DZ' : 'en-US';
+  public async formatCurrency(amount: number): Promise<string> {
+    const currency = await this.getCurrency();
+    const locale = (await this.getLanguage()) === 'fr' ? 'fr-DZ' : 'en-US';
     
     return new Intl.NumberFormat(locale, {
       style: 'currency',
@@ -273,9 +292,9 @@ class SettingsService {
     }).format(amount);
   }
 
-  public formatDate(date: Date): string {
-    const format = this.getDateFormat();
-    const locale = this.getLanguage() === 'fr' ? 'fr-FR' : 'en-US';
+  public async formatDate(date: Date): Promise<string> {
+    const format = await this.getDateFormat();
+    const locale = (await this.getLanguage()) === 'fr' ? 'fr-FR' : 'en-US';
     
     if (format === 'DD/MM/YYYY') {
       return date.toLocaleDateString(locale, {
@@ -295,7 +314,7 @@ class SettingsService {
   }
 
   public async generateInvoiceNumber(): Promise<string> {
-    const prefix = this.getInvoicePrefix();
+    const prefix = await this.getInvoicePrefix();
     
     try {
       // Import the getCompleteInvoices function dynamically to avoid SSR issues

@@ -20,6 +20,8 @@ import {
 } from 'react-icons/fi';
 import { useSettings } from '../../hooks/useSettings';
 import Image from 'next/image';
+import { exportAllTables, setAll } from '../../services/localforageBase';
+import SettingsService from '../../services/settingsService';
 
 export default function ParametresPage() {
   const [activeTab, setActiveTab] = useState('company');
@@ -117,6 +119,54 @@ export default function ParametresPage() {
     if (confirm('Êtes-vous sûr de vouloir réinitialiser tous les paramètres?')) {
       resetToDefaults();
       setMessage({ type: 'success', text: 'Paramètres réinitialisés!' });
+    }
+  };
+
+  // Add handler for exporting all SaaS data
+  const handleExportAllData = async () => {
+    // Gather all SaaS data from localforage
+    const allData = await exportAllTables();
+    // Also export settings from localforage
+    let settingsObj = {};
+    try {
+      // Await exportSettings if it is a Promise
+      const settingsJson = await exportSettings();
+      settingsObj = JSON.parse(settingsJson);
+    } catch {}
+    const exportObj = {
+      settings: settingsObj,
+      data: allData,
+      exportedAt: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'facturelibre-backup.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Add handler for importing all SaaS data
+  const handleImportAllData = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const backup = JSON.parse(text);
+      // Restore settings
+      if (backup.settings) {
+        await SettingsService.getInstance().saveAllSettings(backup.settings);
+      }
+      // Restore all tables
+      if (backup.data && typeof backup.data === 'object') {
+        for (const table of Object.keys(backup.data)) {
+          await setAll(table, backup.data[table]);
+        }
+      }
+      setMessage({ type: 'success', text: 'Données restaurées avec succès !' });
+    } catch (e) {
+      setMessage({ type: 'error', text: 'Erreur lors de la restauration du fichier de sauvegarde.' });
     }
   };
 
@@ -661,29 +711,29 @@ export default function ParametresPage() {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="text-sm font-medium text-blue-800 mb-2">Exporter les paramètres</h4>
+                    <h4 className="text-sm font-medium text-blue-800 mb-2">Exporter toutes les données</h4>
                     <p className="text-sm text-blue-700 mb-4">
-                      Sauvegardez vos paramètres actuels dans un fichier JSON.
+                      Sauvegardez toutes vos données et paramètres dans un fichier JSON.
                     </p>
                     <button
-                      onClick={handleExportSettings}
-                      className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      onClick={handleExportAllData}
+                      className="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
                     >
-                      <FiDownload className="mr-2" />
-                      Exporter
+                      <FiDatabase className="mr-2" />
+                      Exporter toutes les données
                     </button>
                   </div>
 
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <h4 className="text-sm font-medium text-green-800 mb-2">Importer les paramètres</h4>
+                    <h4 className="text-sm font-medium text-green-800 mb-2">Importer une sauvegarde complète</h4>
                     <p className="text-sm text-green-700 mb-4">
-                      Restaurez vos paramètres à partir d&apos;un fichier JSON.
+                      Restaurez toutes vos données et paramètres à partir d&apos;un fichier JSON exporté.
                     </p>
                     <input
                       type="file"
                       accept=".json"
-                      onChange={handleImportSettings}
-                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                      onChange={handleImportAllData}
+                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
                     />
                   </div>
                 </div>
