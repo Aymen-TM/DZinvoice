@@ -36,7 +36,6 @@ export default function ParametresPage() {
     updateUserPreferences,
     updateSystemSettings,
     exportSettings,
-    importSettings,
     resetToDefaults
   } = useSettings();
 
