@@ -2,15 +2,15 @@
 
 import React, { createContext, useContext, useEffect } from 'react';
 import { useSettings } from '../hooks/useSettings';
-import { AppSettings } from '../services/settingsService';
+import { AppSettings, CompanySettings, InvoiceSettings, UserPreferences, SystemSettings } from '../services/settingsService';
 
 interface SettingsContextType {
   settings: AppSettings;
   isLoading: boolean;
-  updateCompanySettings: (updates: any) => Promise<void>;
-  updateInvoiceSettings: (updates: any) => Promise<void>;
-  updateUserPreferences: (updates: any) => Promise<void>;
-  updateSystemSettings: (updates: any) => Promise<void>;
+  updateCompanySettings: (updates: Partial<CompanySettings>) => Promise<void>;
+  updateInvoiceSettings: (updates: Partial<InvoiceSettings>) => Promise<void>;
+  updateUserPreferences: (updates: Partial<UserPreferences>) => Promise<void>;
+  updateSystemSettings: (updates: Partial<SystemSettings>) => Promise<void>;
   formatCurrency: (amount: number) => string;
   formatDate: (date: Date) => string;
   generateInvoiceNumber: () => Promise<string>;
