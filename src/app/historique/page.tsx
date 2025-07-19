@@ -1,8 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { FiFileText, FiPlusCircle, FiEdit, FiDownload, FiFilter, FiTrash2, FiUser, FiPackage, FiDollarSign, FiShoppingCart, FiDatabase } from "react-icons/fi";
-import { getHistory, getHistoryByType, getHistoryByDateRange, getHistoryByEntityType } from "@/services/history";
-import { exportToCSV, exportToPDF, getActionTypeDisplayName, getActionIcon } from "@/utils/historyExport";
+import { FiFileText, FiEdit, FiDownload, FiTrash2, FiUser, FiPackage, FiDollarSign, FiShoppingCart, FiDatabase } from "react-icons/fi";
+import { getHistory } from "@/services/history";
+import { exportToCSV, exportToPDF } from "@/utils/historyExport";
 import { HistoryAction } from "@/services/history";
 import { seedHistoryData } from "@/utils/seedHistory";
 
@@ -200,7 +200,7 @@ export default function HistoriquePage() {
           {/* Filter Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Type d'action</label>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Type d&apos;action</label>
               <select 
                 value={type} 
                 onChange={e => setType(e.target.value)} 
@@ -213,7 +213,7 @@ export default function HistoriquePage() {
             </div>
             
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Type d'entité</label>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Type d&apos;entité</label>
               <select 
                 value={entityType} 
                 onChange={e => setEntityType(e.target.value)} 
@@ -292,7 +292,7 @@ export default function HistoriquePage() {
         {loading ? (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="text-gray-600 mt-2 text-sm sm:text-base">Chargement de l'historique...</p>
+                            <p className="text-gray-600 mt-2 text-sm sm:text-base">Chargement de l&apos;historique...</p>
           </div>
         ) : (
           <ul className="space-y-2 sm:space-y-4">

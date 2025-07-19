@@ -1,5 +1,5 @@
 import { HistoryAction } from '@/services/history';
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts, PDFFont } from 'pdf-lib';
 
 // CSV Export
 export const exportToCSV = (history: HistoryAction[], filename: string = 'historique') => {
@@ -60,7 +60,7 @@ const sanitizeText = (text: string): string => {
 };
 
 // Helper function to wrap text
-const wrapText = (text: string, maxWidth: number, font: any, fontSize: number): string[] => {
+const wrapText = (text: string, maxWidth: number, font: PDFFont, fontSize: number): string[] => {
   const sanitizedText = sanitizeText(text);
   const words = sanitizedText.split(' ');
   const lines: string[] = [];
@@ -94,7 +94,6 @@ export const exportToPDF = async (history: HistoryAction[], filename: string = '
 
   const pageMargin = 50;
   const contentWidth = 495;
-  const lineHeight = 14;
   let currentY = 800;
 
   // Title

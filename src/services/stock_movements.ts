@@ -1,4 +1,3 @@
-import { StockItem } from '@/types/erp';
 import * as base from './localforageBase';
 import { logStockMovement } from './history';
 
