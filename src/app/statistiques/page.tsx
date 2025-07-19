@@ -40,6 +40,7 @@ import {
 import { getCompleteInvoices } from '@/utils/invoiceStorage';
 import { getHistory } from '@/services/history';
 import type { Vente, Client, Achat, Article, StockItem } from '@/types/erp';
+import type { HistoryAction } from '@/services/history';
 
 Chart.register(
   CategoryScale, 
@@ -68,7 +69,7 @@ interface StatsData {
   monthlyAchats: number[];
   categoryDistribution: { [key: string]: number };
   clientDistribution: { [key: string]: number };
-  recentActivity: unknown[]; // ou crée une interface RecentActivity si tu connais la structure
+  recentActivity: HistoryAction[];
   // Advanced metrics
   profitMargin: number;
   growthRate: number;
