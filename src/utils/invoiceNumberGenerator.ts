@@ -1,16 +1,20 @@
 import localforage from 'localforage';
 
-interface StoredInvoice {
+interface CompleteInvoice {
   id: string;
-  clientName: string;
-  date: string;
-  total: number;
-  items: Array<{
-    description: string;
-    quantity: number;
-    price: number;
-  }>;
-  status?: string;
+  meta: {
+    invoiceNumber: string;
+    date: string;
+    terms: string;
+    notes: string;
+  };
+  client: {
+    clientName: string;
+    clientCode: string;
+  };
+  totals: {
+    montantTTC: number;
+  };
 }
 
 function getCurrentYearShort(): string {
@@ -23,14 +27,18 @@ function formatInvoiceNumber(yearShort: string, number: number): string {
 
 export async function generateNextInvoiceNumber(): Promise<string> {
   const yearShort = getCurrentYearShort();
-  const invoices: StoredInvoice[] = (await localforage.getItem('invoices')) || [];
+  
+  // Get complete invoices (the ones with proper invoice numbers)
+  const completeInvoices: CompleteInvoice[] = (await localforage.getItem('complete_invoices')) || [];
+  
   // Only consider invoices for the current year and matching the new format
   const regex = new RegExp(`^FV/${yearShort}-\\d{4}$`);
-  const numbers = invoices
-    .map((invoice: StoredInvoice) => invoice.id)
-    .filter((id: string) => regex.test(id))
-    .map((id: string) => parseInt(id.split('-')[1], 10))
+  const numbers = completeInvoices
+    .map((invoice: CompleteInvoice) => invoice.meta.invoiceNumber)
+    .filter((invoiceNumber: string) => regex.test(invoiceNumber))
+    .map((invoiceNumber: string) => parseInt(invoiceNumber.split('-')[1], 10))
     .filter((num) => !isNaN(num));
+  
   let nextNumber = 1;
   if (numbers.length > 0) {
     numbers.sort((a, b) => a - b);
@@ -43,6 +51,7 @@ export async function generateNextInvoiceNumber(): Promise<string> {
       nextNumber = numbers.length + 1;
     }
   }
+  
   return formatInvoiceNumber(yearShort, nextNumber);
 }
 
