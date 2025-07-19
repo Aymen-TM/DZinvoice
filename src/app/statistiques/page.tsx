@@ -41,6 +41,7 @@ import { getCompleteInvoices } from '@/utils/invoiceStorage';
 import { getHistory } from '@/services/history';
 import type { Vente, Client, Achat, Article, StockItem } from '@/types/erp';
 import type { HistoryAction } from '@/services/history';
+import Image from 'next/image';
 
 Chart.register(
   CategoryScale, 
@@ -328,12 +329,8 @@ export default function StatistiquesPage() {
         marketAnalysis,
         riskAssessment
       });
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error('Error loading statistics:', error.message);
-      } else {
-        console.error('Error loading statistics:', error);
-      }
+    } catch (error) {
+      console.error('Error loading statistics:', error);
     } finally {
       setLoading(false);
     }
