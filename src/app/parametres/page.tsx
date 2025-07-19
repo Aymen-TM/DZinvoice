@@ -45,6 +45,7 @@ export default function ParametresPage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const saveSettings = async (settingsType: string, data: any) => {
     try {
       switch (settingsType) {
@@ -104,7 +105,7 @@ export default function ParametresPage() {
         try {
           importSettings(e.target?.result as string);
           setMessage({ type: 'success', text: 'Paramètres importés avec succès!' });
-        } catch (error) {
+        } catch {
           setMessage({ type: 'error', text: 'Erreur lors de l\'import' });
         }
       };

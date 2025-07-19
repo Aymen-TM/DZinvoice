@@ -811,7 +811,7 @@ function AccueilERPTest() {
   };
 
   // Memoize columns and rows to prevent unnecessary re-renders
-  const { columns, rows } = useMemo(getTable, [activeMenu, clients, articles, achats, stock, ventes]);
+  const { columns, rows } = useMemo(getTable, [activeMenu, clients, articles, achats, stock, ventes, formatCurrency]);
   const filteredSortedRows = applyFiltersAndSorting(columns, rows);
   // Add state for column visibility after columns is defined
   const [visibleColumns, setVisibleColumns] = useState<string[]>(columns);
