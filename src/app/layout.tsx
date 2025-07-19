@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import ForceLightMode from "@/components/ForceLightMode";
+import SettingsProvider from "@/components/SettingsProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,9 +31,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         style={{ background: '#fff' }}
       >
-        <ForceLightMode />
-        <Navbar />
-        {children}
+        <SettingsProvider>
+          <ForceLightMode />
+          <Navbar />
+          {children}
+        </SettingsProvider>
       </body>
     </html>
   );

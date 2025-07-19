@@ -12,9 +12,11 @@ interface ItemsListProps {
   onItemsChange: (items: Item[]) => void;
   totals: Totals;
   onTotalsChange: (totals: Totals) => void;
+  currency?: string;
+  formatCurrency?: (amount: number) => string;
 }
 
-export default function ItemsList({ items, onItemsChange, totals, onTotalsChange }: ItemsListProps) {
+export default function ItemsList({ items, onItemsChange, totals, onTotalsChange, currency = 'DA', formatCurrency }: ItemsListProps) {
   const [remise, setRemise] = useState(0);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [erpArticles, setErpArticles] = useState<ERPArticle[]>([]);
@@ -22,6 +24,14 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
   const [filteredArticles, setFilteredArticles] = useState<ERPArticle[]>([]);
   const [dropdownField, setDropdownField] = useState<'reference' | 'designation' | null>(null);
   const [depots, setDepots] = useState<string[]>([]);
+
+  // Helper function to format currency
+  const formatAmount = (amount: number) => {
+    if (formatCurrency) {
+      return formatCurrency(amount);
+    }
+    return `${amount.toFixed(2)} ${currency}`;
+  };
 
   const addItem = () => {
     setIsAddingItem(true);
@@ -342,7 +352,7 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
                           >
                             <div className="flex flex-col">
                               <span className="text-sm font-medium text-gray-900 truncate block">{article.designation}</span>
-                              <span className="text-xs text-gray-500 truncate block">Ref: {article.ref} - Prix: {article.prixVente} DA</span>
+                              <span className="text-xs text-gray-500 truncate block">Ref: {article.ref} - Prix: {formatAmount(article.prixVente)}</span>
                             </div>
                           </button>
                         ))}
@@ -424,7 +434,7 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
                   <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-3 border border-orange-200">
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-semibold text-gray-700">Total article:</span>
-                      <span className="text-lg font-bold text-orange-600">{item.amount.toFixed(2)} DA</span>
+                      <span className="text-lg font-bold text-orange-600">{formatAmount(item.amount)}</span>
                     </div>
                   </div>
                 </div>
@@ -499,7 +509,7 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
                           >
                             <div className="flex flex-col">
                               <span className="text-sm font-medium text-gray-900 truncate block">{article.designation}</span>
-                              <span className="text-xs text-gray-500 truncate block">Ref: {article.ref} - Prix: {article.prixVente} DA</span>
+                              <span className="text-xs text-gray-500 truncate block">Ref: {article.ref} - Prix: {formatAmount(article.prixVente)}</span>
                             </div>
                           </button>
                         ))}
@@ -608,19 +618,19 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
                 <div className="space-y-3 sm:space-y-4">
                   <div className="flex justify-between items-center p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-all duration-200">
                     <span className="text-sm text-gray-600">Montant HT:</span>
-                    <span className="font-semibold text-gray-900">{totals.montantHT.toFixed(2)} DA</span>
+                    <span className="font-semibold text-gray-900">{formatAmount(totals.montantHT)}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-all duration-200">
                     <span className="text-sm text-gray-600">Remise:</span>
-                    <span className="font-semibold text-red-600">{totals.remise.toFixed(2)} DA</span>
+                    <span className="font-semibold text-red-600">{formatAmount(totals.remise)}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-all duration-200">
                     <span className="text-sm text-gray-600">TVA:</span>
-                    <span className="font-semibold text-gray-900">{totals.tva.toFixed(2)} DA</span>
+                    <span className="font-semibold text-gray-900">{formatAmount(totals.tva)}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 sm:p-4 bg-gradient-to-r from-green-100 to-emerald-100 rounded-lg border-2 border-green-200">
                     <span className="text-base sm:text-lg font-bold text-gray-900">Montant TTC:</span>
-                    <span className="text-lg sm:text-xl font-bold text-green-600">{totals.montantTTC.toFixed(2)} DA</span>
+                    <span className="text-lg sm:text-xl font-bold text-green-600">{formatAmount(totals.montantTTC)}</span>
                   </div>
                 </div>
               </div>

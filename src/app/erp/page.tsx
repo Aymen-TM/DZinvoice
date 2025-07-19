@@ -6,7 +6,7 @@ import {
   getClients, setClients, getArticles, setArticles, 
   getAchats, setAchats, getStock, setStock 
 } from '@/utils/erpStorage';
-import { getVentes, setVentes, deleteInvoice, getCompleteInvoiceById, getCompleteInvoices } from '@/utils/invoiceStorage';
+import { getVentes, setVentes, deleteInvoice, getCompleteInvoiceById, getCompleteInvoices, deleteCompleteInvoice } from '@/utils/invoiceStorage';
 import { 
   exportClients, exportArticles, exportAchats, 
   exportStock, exportVentes 
@@ -16,6 +16,7 @@ import localforage from 'localforage';
 import { generateInvoicePDF } from '@/utils/pdfGenerator';
 import { Suspense } from "react";
 import ERPTable from '@/components/ERPTable';
+import { useSettingsContext } from '@/components/SettingsProvider';
 
 const TOOLBAR_BUTTONS = [
   { key: "new", label: "New" },
@@ -55,6 +56,7 @@ function AccueilERPTest() {
   const [showDeleteArticleIdx, setShowDeleteArticleIdx] = useState<number | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { formatCurrency, settings } = useSettingsContext();
 
   // Add at the top level of AccueilERPTest, after other useState hooks
   const [achatArticleRefDropdown, setAchatArticleRefDropdown] = useState<boolean[]>([]);
@@ -670,8 +672,14 @@ function AccueilERPTest() {
       const venteToDelete = ventes[showDeleteVenteIdx];
       const updated = ventes.filter((_, i) => i !== showDeleteVenteIdx);
       await saveVentes(updated);
-      // Also delete from invoices table
-      await deleteInvoice(venteToDelete.id);
+      // Also delete from complete invoices table
+      try {
+        await deleteCompleteInvoice(venteToDelete.id);
+        console.log('Invoice deleted successfully');
+      } catch (error) {
+        console.error('Error deleting invoice:', error);
+        // Continue with vente deletion even if invoice deletion fails
+      }
       setShowDeleteVenteIdx(null);
     }
   };
@@ -758,7 +766,7 @@ function AccueilERPTest() {
           rows: articles.map((a) => [
             a.ref,
             a.designation,
-            a.prixVente.toString() + " DA"
+            formatCurrency(a.prixVente)
           ]),
         };
       case "achat":
@@ -768,7 +776,7 @@ function AccueilERPTest() {
             a.id.toString(),
             a.fournisseur,
             a.date,
-            a.montant.toString() + " DA"
+            formatCurrency(a.montant)
           ]),
         };
       case "stock":
@@ -791,9 +799,9 @@ function AccueilERPTest() {
             return [
               v.date,
               v.id,
-              unitPrice.toString() + " DA",
-              prixHT.toString() + " DA",
-              montant.toString() + " DA"
+                          formatCurrency(unitPrice),
+            formatCurrency(prixHT),
+            formatCurrency(montant)
             ];
           }),
         };
@@ -970,7 +978,7 @@ function AccueilERPTest() {
       console.log('All complete invoice IDs:', allCompleteInvoices.map(inv => inv.id));
       const invoice = await getCompleteInvoiceById(id);
       if (!invoice) return alert('Facture introuvable.');
-      const pdfBytes = await generateInvoicePDF(invoice);
+      const pdfBytes = await generateInvoicePDF(invoice, settings.invoiceSettings.defaultCurrency);
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -992,17 +1000,21 @@ function AccueilERPTest() {
       // Debug logging
       console.log('Looking for complete invoice with id:', id);
       const allCompleteInvoices = await getCompleteInvoices();
-      console.log('All complete invoice IDs:', allCompleteInvoices.map(inv => inv.id));
       const invoice = await getCompleteInvoiceById(id);
-      if (!invoice) return alert('Facture introuvable.');
-      const pdfBytes = await generateInvoicePDF(invoice);
+      if (!invoice) {
+        alert('Facture introuvable pour cette vente.');
+        return;
+      }
+      const pdfBytes = await generateInvoicePDF(invoice, settings.invoiceSettings.defaultCurrency);
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
       setTimeout(() => URL.revokeObjectURL(url), 1000);
+      // Optionally, show a toast or alert for success
+      // alert('Prévisualisation de la facture ouverte dans un nouvel onglet.');
     } catch (e) {
       alert('Erreur lors de la prévisualisation du PDF.');
-      alert(e)
+      alert(e);
     } finally {
       setPdfLoadingIdx(null);
     }

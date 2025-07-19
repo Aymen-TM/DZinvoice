@@ -3,18 +3,22 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useSettingsContext } from "./SettingsProvider";
 
 const NAV_LINKS = [
-  { name: "Mes Factures", href: "/" },
+  { name: "Accueil", href: "/landing" },
   { name: "Créer une facture", href: "/create-invoice" },
   { name: "ERP", href: "/erp" },
   { name: "Historique", href: "/historique" },
   { name: "Statistiques", href: "/statistiques" },
+  { name: "Paramètres", href: "/parametres" },
   { name: "Politique de confidentialité", href: "/privacy-policy" },
 ];
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { settings } = useSettingsContext();
+  const { companySettings, userPreferences } = settings;
 
   return (
     <nav className="sticky top-0 bg-white shadow z-50">
@@ -24,7 +28,9 @@ export default function Navbar() {
           <div className="flex-shrink-0 flex items-center">
             <Link href="/" className="flex items-center space-x-2">
               <Image src="/globe.svg" alt="DZ Invoice Logo" className="h-8 w-8" width={32} height={32} />
-              <span className="font-bold text-lg tracking-tight text-gray-900">DZ Invoice</span>
+              <span className="font-bold text-lg tracking-tight text-gray-900">
+                {companySettings.name || "DZ Invoice"}
+              </span>
             </Link>
           </div>
 

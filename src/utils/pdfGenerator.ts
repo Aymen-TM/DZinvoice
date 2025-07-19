@@ -1,7 +1,7 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { InvoiceData } from '@/types/invoice';
 
-export const generateInvoicePDF = async (invoiceData: InvoiceData) => {
+export const generateInvoicePDF = async (invoiceData: InvoiceData, currency = 'DA') => {
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([595, 842]);
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -194,13 +194,13 @@ export const generateInvoicePDF = async (invoiceData: InvoiceData) => {
   });
 
   let totalY = currentY - 20;
-  page.drawText(`Montant H.T: ${totals.montantHT.toFixed(2)} DA`, { x: 350, y: totalY, size: 11, font });
+  page.drawText(`Montant H.T: ${totals.montantHT.toFixed(2)} ${currency}`, { x: 350, y: totalY, size: 11, font });
   totalY -= lineHeight;
-  page.drawText(`Remise: ${totals.remise.toFixed(2)} DA`, { x: 350, y: totalY, size: 11, font });
+  page.drawText(`Remise: ${totals.remise.toFixed(2)} ${currency}`, { x: 350, y: totalY, size: 11, font });
   totalY -= lineHeight;
-  page.drawText(`T.V.A: ${totals.tva.toFixed(2)} DA`, { x: 350, y: totalY, size: 11, font });
+  page.drawText(`T.V.A: ${totals.tva.toFixed(2)} ${currency}`, { x: 350, y: totalY, size: 11, font });
   totalY -= lineHeight;
-  page.drawText(`Montant T.T.C: ${totals.montantTTC.toFixed(2)} DA`, { x: 350, y: totalY, size: 12, font: boldFont });
+  page.drawText(`Montant T.T.C: ${totals.montantTTC.toFixed(2)} ${currency}`, { x: 350, y: totalY, size: 12, font: boldFont });
 
   currentY -= totalsBoxHeight + 20;
 

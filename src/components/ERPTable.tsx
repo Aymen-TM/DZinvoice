@@ -249,14 +249,14 @@ export default function ERPTable({
                         </button>
                         <button
                           className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition flex items-center gap-1"
-                          onClick={() => onDownloadPDF(rows[idx][0], idx)}
+                          onClick={() => onDownloadPDF(rows[idx][1], idx)}
                           disabled={pdfLoadingIdx === idx}
                         >
                           {pdfLoadingIdx === idx ? '...' : 'Télécharger'}
                         </button>
                         <button
                           className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition flex items-center gap-1"
-                          onClick={() => onPreviewPDF(rows[idx][0], idx)}
+                          onClick={() => onPreviewPDF(rows[idx][1], idx)}
                           disabled={pdfLoadingIdx === idx}
                         >
                           {pdfLoadingIdx === idx ? '...' : 'Prévisualiser'}
@@ -360,7 +360,7 @@ export default function ERPTable({
                     </button>
                     <button
                       className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition"
-                      onClick={() => onDownloadPDF(rows[idx][0], idx)}
+                      onClick={() => onDownloadPDF(rows[idx][1], idx)}
                       disabled={pdfLoadingIdx === idx}
                     >
                       {pdfLoadingIdx === idx ? '...' : 'PDF'}
@@ -391,7 +391,7 @@ export default function ERPTable({
               <div className="pt-2 border-t border-gray-100">
                 <button
                   className="w-full px-3 py-2 text-xs bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition flex items-center justify-center gap-2"
-                  onClick={() => onPreviewPDF(rows[idx][0], idx)}
+                  onClick={() => onPreviewPDF(rows[idx][1], idx)}
                   disabled={pdfLoadingIdx === idx}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

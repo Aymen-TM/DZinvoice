@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import ReactDOM from "react-dom";
 import { getInvoices, addInvoice, deleteInvoice as deleteInvoiceAsync } from '@/utils/invoiceStorage';
+import { useSettingsContext } from '@/components/SettingsProvider';
 
 interface InvoiceItem {
   description: string;
@@ -48,6 +49,7 @@ export default function MyInvoicesPage() {
   const [menuPortal, setMenuPortal] = useState<{ id: string; top: number; left: number; direction: 'up' | 'down' } | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const menuPortalRef = useRef<HTMLDivElement | null>(null);
+  const { formatCurrency } = useSettingsContext();
 
   // Toast helper
   const showToast = (message: string) => {
@@ -357,7 +359,7 @@ export default function MyInvoicesPage() {
                       </div>
                       <div className="flex flex-wrap gap-2 text-xs text-gray-500">
                         <span>Date : <span className="text-gray-700">{new Date(invoice.date).toLocaleDateString()}</span></span>
-                        <span>Total : <span className="font-bold text-green-700">{invoice.total.toLocaleString()} DZD</span></span>
+                        <span>Total : <span className="font-bold text-green-700">{formatCurrency(invoice.total)}</span></span>
                         {invoice.status === 'paid' && (
                           <span className="text-green-600 font-semibold">Payée</span>
                         )}
@@ -388,7 +390,7 @@ export default function MyInvoicesPage() {
                           <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm font-semibold text-gray-900 whitespace-nowrap">{invoice.clientName}</td>
                           <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-gray-700 whitespace-nowrap">{new Date(invoice.date).toLocaleDateString()}</td>
                           <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm font-bold text-green-700 whitespace-nowrap">
-                            {invoice.total.toLocaleString()} DZD
+                            {formatCurrency(invoice.total)}
                             {invoice.status === 'paid' && (
                               <div className="text-xs text-green-600 font-semibold mt-1">Payée</div>
                             )}

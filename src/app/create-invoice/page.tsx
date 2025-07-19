@@ -12,23 +12,25 @@ import { generateNextInvoiceNumber } from '@/utils/invoiceNumberGenerator';
 import { getCompleteInvoiceById } from '@/utils/invoiceStorage';
 import { getClients as getERPClients, setClients as setERPClients } from '@/utils/erpStorage';
 import type { Client as ERPClient } from '@/types/erp';
+import { useSettings } from '@/hooks/useSettings';
 
 function CreateInvoiceContent() {
   const searchParams = useSearchParams();
   const editInvoiceId = searchParams.get('edit');
   const isEditing = !!editInvoiceId;
+  const { companySettings, invoiceSettings, generateInvoiceNumber, formatCurrency } = useSettings();
 
   const [company, setCompany] = useState<Company>({
-    companyName: '',
+    companyName: companySettings.name,
     activity: '',
-    address: '',
+    address: companySettings.address,
     capital: '',
-    phone: '',
-    email: '',
-    web: '',
+    phone: companySettings.phone,
+    email: companySettings.email,
+    web: companySettings.website,
     bank: '',
     rc: '',
-    nif: '',
+    nif: companySettings.taxNumber,
     ai: '',
     nis: '',
   });
@@ -67,15 +69,25 @@ function CreateInvoiceContent() {
           setTotals(invoice.totals);
         }
       } else {
-        // Generate new invoice number for new invoice
-        const nextInvoiceNumber = await generateNextInvoiceNumber();
-        setMeta(prev => ({
-          ...prev,
-          invoiceNumber: nextInvoiceNumber,
-        }));
+        // Generate new invoice number using settings
+        try {
+          const nextInvoiceNumber = await generateInvoiceNumber();
+          setMeta(prev => ({
+            ...prev,
+            invoiceNumber: nextInvoiceNumber,
+          }));
+        } catch (error) {
+          console.error('Error generating invoice number:', error);
+          // Fallback to timestamp-based number
+          const fallbackNumber = `FV/25${Date.now()}`;
+          setMeta(prev => ({
+            ...prev,
+            invoiceNumber: fallbackNumber,
+          }));
+        }
       }
     })();
-  }, [isEditing, editInvoiceId]);
+  }, [isEditing, editInvoiceId, generateInvoiceNumber]);
 
   // On mount, try to load beneficiary client and prefill company info
   useEffect(() => {
@@ -97,9 +109,25 @@ function CreateInvoiceContent() {
           ai: beneficiary.ai,
           nis: beneficiary.nis,
         });
+      } else {
+        // Use settings if no beneficiary client found
+        setCompany({
+          companyName: companySettings.name,
+          activity: '',
+          address: companySettings.address,
+          capital: '',
+          phone: companySettings.phone,
+          email: companySettings.email,
+          web: companySettings.website,
+          bank: '',
+          rc: '',
+          nif: companySettings.taxNumber,
+          ai: '',
+          nis: '',
+        });
       }
     })();
-  }, []);
+  }, [companySettings]);
 
   // Save company info as ERP client with famille = 'Bénéficiaire du logiciel' when company info changes
   useEffect(() => {
@@ -229,7 +257,9 @@ function CreateInvoiceContent() {
               items={items} 
               onItemsChange={setItems} 
               totals={totals} 
-              onTotalsChange={setTotals} 
+              onTotalsChange={setTotals}
+              currency={invoiceSettings.defaultCurrency}
+              formatCurrency={formatCurrency}
             />
           </div>
 

@@ -10,6 +10,7 @@ import { getStock, setStock } from '@/utils/erpStorage';
 import localforage from 'localforage';
 import { getClients as getERPClients, setClients as setERPClients } from '@/utils/erpStorage';
 import type { Client as ERPClient } from '@/types/erp';
+import { useSettings } from '@/hooks/useSettings';
 
 interface GeneratePDFButtonProps {
   invoiceData: InvoiceData;
@@ -23,6 +24,7 @@ export default function GeneratePDFButton({ invoiceData, isEditing = false }: Ge
   const [hasDownloaded, setHasDownloaded] = useState(false);
   const router = useRouter();
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const { invoiceSettings } = useSettings();
 
   const handleGeneratePDF = async () => {
     setIsGenerating(true);
@@ -60,7 +62,7 @@ export default function GeneratePDFButton({ invoiceData, isEditing = false }: Ge
         await setERPClients([...erpClients, newERPClient]);
       }
 
-      const bytes = await generateInvoicePDF(invoiceData);
+      const bytes = await generateInvoicePDF(invoiceData, invoiceSettings.defaultCurrency);
       setPdfBytes(bytes);
       setIsSuccess(true);
 
