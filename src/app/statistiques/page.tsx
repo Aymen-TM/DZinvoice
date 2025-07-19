@@ -35,7 +35,6 @@ import {
   FiFilter,
   FiDownload,
   FiRefreshCw,
-  FiEye,
   FiEyeOff,
   FiSettings,
   FiCalendar as FiCalendarIcon
