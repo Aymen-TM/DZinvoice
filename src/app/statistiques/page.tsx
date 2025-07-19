@@ -288,7 +288,7 @@ export default function StatistiquesPage() {
         .slice(0, 10);
 
       // Calculate all advanced analytics
-      const dailyStats = calculateDailyStats(filteredVentes, filteredAchats, clients);
+      const dailyStats = calculateDailyStats(filteredVentes, filteredAchats);
       const clientSegments = calculateClientSegments(filteredVentes);
       const productAnalytics = calculateProductAnalytics(articles, stock);
       const financialMetrics = calculateFinancialMetrics(filteredVentes, filteredAchats, articles);
@@ -406,7 +406,7 @@ export default function StatistiquesPage() {
   };
 
   // Advanced calculation functions
-  const calculateDailyStats = (ventes: Vente[], achats: Achat[], clients: Client[]) => {
+  const calculateDailyStats = (ventes: Vente[], achats: Achat[]) => {
     const dailyStats: { [date: string]: { ventes: number; achats: number; orders: number; customers: number } } = {};
     
     ventes.forEach(vente => {
