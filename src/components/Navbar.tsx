@@ -18,7 +18,7 @@ const NAV_LINKS = [
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { settings } = useSettingsContext();
-  const { companySettings, userPreferences } = settings;
+  const { companySettings } = settings;
 
   return (
     <nav className="sticky top-0 bg-white shadow z-50">

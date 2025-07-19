@@ -51,6 +51,7 @@ import {
 } from '@/utils/erpStorage';
 import { getCompleteInvoices } from '@/utils/invoiceStorage';
 import { getHistory } from '@/services/history';
+import type { Vente, Client, Achat, Article, StockItem } from '@/types/erp';
 
 Chart.register(
   CategoryScale, 
@@ -376,45 +377,45 @@ export default function StatistiquesPage() {
     return quarters;
   };
 
-  const calculateSalesEfficiency = (ventes: any[], clients: any[]): number => {
+  const calculateSalesEfficiency = (ventes: Vente[], clients: Client[]): number => {
     if (clients.length === 0) return 0;
     return (ventes.length / clients.length) * 100;
   };
 
-  const calculateCostEfficiency = (achats: any[], articles: any[]): number => {
+  const calculateCostEfficiency = (achats: Achat[], articles: Article[]): number => {
     if (articles.length === 0) return 0;
     const avgCost = achats.reduce((sum, a) => sum + (a.montant || 0), 0) / achats.length;
     const avgPrice = articles.reduce((sum, a) => sum + (a.prixVente || 0), 0) / articles.length;
     return avgPrice > 0 ? ((avgPrice - avgCost) / avgPrice) * 100 : 0;
   };
 
-  const calculateCustomerSatisfaction = (ventes: any[], clients: any[]): number => {
+  const calculateCustomerSatisfaction = (ventes: Vente[], clients: Client[]): number => {
     if (clients.length === 0) return 0;
     const activeClients = new Set(ventes.map(v => v.client)).size;
     return (activeClients / clients.length) * 100;
   };
 
-  const calculateInventoryEfficiency = (stock: any[], articles: any[]): number => {
+  const calculateInventoryEfficiency = (stock: StockItem[], articles: Article[]): number => {
     if (articles.length === 0) return 0;
     const totalStock = stock.reduce((sum, s) => sum + (s.quantite || 0), 0);
     const totalArticles = articles.reduce((sum, a) => sum + (a.qte || 0), 0);
     return totalArticles > 0 ? (totalStock / totalArticles) * 100 : 0;
   };
 
-  const calculateRetentionRate = (ventes: any[], clients: any[]): number => {
+  const calculateRetentionRate = (ventes: Vente[], clients: Client[]): number => {
     if (clients.length === 0) return 0;
     const repeatCustomers = new Set(ventes.map(v => v.client)).size;
     return (repeatCustomers / clients.length) * 100;
   };
 
-  const calculateInventoryTurnover = (stock: any[], ventes: any[]): number => {
+  const calculateInventoryTurnover = (stock: StockItem[], ventes: Vente[]): number => {
     const totalStock = stock.reduce((sum, s) => sum + (s.quantite || 0), 0);
     const totalSales = ventes.reduce((sum, v) => sum + (v.montant || 0), 0);
     return totalStock > 0 ? totalSales / totalStock : 0;
   };
 
   // Advanced calculation functions
-  const calculateDailyStats = (ventes: any[], achats: any[], clients: any[]) => {
+  const calculateDailyStats = (ventes: Vente[], achats: Achat[], clients: Client[]) => {
     const dailyStats: { [date: string]: any } = {};
     
     ventes.forEach(vente => {
@@ -437,7 +438,7 @@ export default function StatistiquesPage() {
     return dailyStats;
   };
 
-  const calculateClientSegments = (ventes: any[], clients: any[]) => {
+  const calculateClientSegments = (ventes: Vente[], clients: Client[]) => {
     const clientTotals = ventes.reduce((acc, vente) => {
       const clientName = vente.client || 'Client inconnu';
       if (!acc[clientName]) {
@@ -459,7 +460,7 @@ export default function StatistiquesPage() {
     return { vip, regular, new: newClients };
   };
 
-  const calculateProductAnalytics = (articles: any[], stock: any[], ventes: any[]) => {
+  const calculateProductAnalytics = (articles: Article[], stock: StockItem[], ventes: Vente[]) => {
     const bestSellers = articles
       .map(article => ({
         name: article.designation,
@@ -492,7 +493,7 @@ export default function StatistiquesPage() {
     return { bestSellers, lowStock, highProfit };
   };
 
-  const calculateFinancialMetrics = (ventes: any[], achats: any[], articles: any[]) => {
+  const calculateFinancialMetrics = (ventes: Vente[], achats: Achat[], articles: Article[]) => {
     const totalRevenue = ventes.reduce((sum, v) => sum + (v.montant || 0), 0);
     const totalCosts = achats.reduce((sum, a) => sum + (a.montant || 0), 0);
     const totalAssets = articles.reduce((sum, a) => sum + (a.qte * a.prixAchat), 0);
@@ -512,7 +513,7 @@ export default function StatistiquesPage() {
     };
   };
 
-  const calculateOperationalMetrics = (ventes: any[], clients: any[], stock: any[]) => {
+  const calculateOperationalMetrics = (ventes: Vente[], clients: Client[], stock: StockItem[]) => {
     const totalOrders = ventes.length;
     const fulfilledOrders = ventes.filter(v => v.montant > 0).length;
     const orderFulfillmentRate = totalOrders > 0 ? (fulfilledOrders / totalOrders) * 100 : 0;
@@ -531,7 +532,7 @@ export default function StatistiquesPage() {
     };
   };
 
-  const calculateMarketAnalysis = (ventes: any[], clients: any[]) => {
+  const calculateMarketAnalysis = (ventes: Vente[], clients: Client[]) => {
     const totalMarketSize = 1000000; // Simulated market size
     const marketShare = (ventes.reduce((sum, v) => sum + (v.montant || 0), 0) / totalMarketSize) * 100;
     
@@ -550,7 +551,7 @@ export default function StatistiquesPage() {
     return { marketShare, competitorAnalysis, marketTrends };
   };
 
-  const calculateRiskAssessment = (ventes: any[], stock: any[], clients: any[]) => {
+  const calculateRiskAssessment = (ventes: Vente[], stock: StockItem[], clients: Client[]) => {
     const creditRisk = 15; // Simulated credit risk percentage
     const inventoryRisk = stock.filter(s => s.quantite < 5).length / stock.length * 100;
     const marketRisk = 25; // Simulated market risk
@@ -729,12 +730,6 @@ export default function StatistiquesPage() {
       newExpanded.add(section);
     }
     setExpandedSections(newExpanded);
-  };
-
-  const getKPIStatus = (value: number, threshold: number) => {
-    if (value >= threshold) return 'good';
-    if (value >= threshold * 0.8) return 'warning';
-    return 'critical';
   };
 
   return (
