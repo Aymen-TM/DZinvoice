@@ -13,7 +13,7 @@ interface ItemsListProps {
   totals: Totals;
   onTotalsChange: (totals: Totals) => void;
   currency?: string;
-  formatCurrency?: (amount: number) => string;
+  formatCurrency?: (amount: number) => Promise<string> | string;
 }
 
 export default function ItemsList({ items, onItemsChange, totals, onTotalsChange, currency = 'DA', formatCurrency }: ItemsListProps) {
@@ -24,11 +24,18 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
   const [filteredArticles, setFilteredArticles] = useState<ERPArticle[]>([]);
   const [dropdownField, setDropdownField] = useState<'reference' | 'designation' | null>(null);
   const [depots, setDepots] = useState<string[]>([]);
+  // Add state for formatted amounts
+  const [formattedAmounts, setFormattedAmounts] = useState<{ [key: string]: string }>({});
+  const [formattedTotals, setFormattedTotals] = useState<{ [key: string]: string }>({});
 
-  // Helper function to format currency
-  const formatAmount = (amount: number) => {
-    if (formatCurrency) {
-      return formatCurrency(amount);
+  // Helper function to format currency (async-aware)
+  const formatAmount = (amount: number, key?: string) => {
+    if (key && formattedAmounts[key] !== undefined) {
+      return formattedAmounts[key];
+    }
+    if (typeof formatCurrency === 'function') {
+      // fallback while loading
+      return `${amount.toFixed(2)} ${currency}`;
     }
     return `${amount.toFixed(2)} ${currency}`;
   };
@@ -178,6 +185,27 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
 
     onTotalsChange(newTotals);
   }, [items, remise, onTotalsChange]);
+
+  // Precompute formatted amounts for items and totals
+  useEffect(() => {
+    let cancelled = false;
+    async function computeFormatted() {
+      if (typeof formatCurrency !== 'function') return;
+      const entries = await Promise.all(items.map(async (item) => [item.id, await formatCurrency(item.amount)]));
+      const totalsEntries = await Promise.all([
+        ['montantHT', await formatCurrency(totals.montantHT)],
+        ['remise', await formatCurrency(totals.remise)],
+        ['tva', await formatCurrency(totals.tva)],
+        ['montantTTC', await formatCurrency(totals.montantTTC)],
+      ]);
+      if (!cancelled) {
+        setFormattedAmounts(Object.fromEntries(entries));
+        setFormattedTotals(Object.fromEntries(totalsEntries));
+      }
+    }
+    computeFormatted();
+    return () => { cancelled = true; };
+  }, [items, totals, formatCurrency]);
 
   return (
     <div className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8 hover:shadow-2xl transition-all duration-500 group">
@@ -434,7 +462,7 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
                   <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-3 border border-orange-200">
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-semibold text-gray-700">Total article:</span>
-                      <span className="text-lg font-bold text-orange-600">{formatAmount(item.amount)}</span>
+                      <span className="text-lg font-bold text-orange-600">{formatAmount(item.amount, item.id)}</span>
                     </div>
                   </div>
                 </div>
@@ -618,19 +646,19 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
                 <div className="space-y-3 sm:space-y-4">
                   <div className="flex justify-between items-center p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-all duration-200">
                     <span className="text-sm text-gray-600">Montant HT:</span>
-                    <span className="font-semibold text-gray-900">{formatAmount(totals.montantHT)}</span>
+                    <span className="font-semibold text-gray-900">{formattedTotals.montantHT ?? formatAmount(totals.montantHT)}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-all duration-200">
                     <span className="text-sm text-gray-600">Remise:</span>
-                    <span className="font-semibold text-red-600">{formatAmount(totals.remise)}</span>
+                    <span className="font-semibold text-red-600">{formattedTotals.remise ?? formatAmount(totals.remise)}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-all duration-200">
                     <span className="text-sm text-gray-600">TVA:</span>
-                    <span className="font-semibold text-gray-900">{formatAmount(totals.tva)}</span>
+                    <span className="font-semibold text-gray-900">{formattedTotals.tva ?? formatAmount(totals.tva)}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 sm:p-4 bg-gradient-to-r from-green-100 to-emerald-100 rounded-lg border-2 border-green-200">
                     <span className="text-base sm:text-lg font-bold text-gray-900">Montant TTC:</span>
-                    <span className="text-lg sm:text-xl font-bold text-green-600">{formatAmount(totals.montantTTC)}</span>
+                    <span className="text-lg sm:text-xl font-bold text-green-600">{formattedTotals.montantTTC ?? formatAmount(totals.montantTTC)}</span>
                   </div>
                 </div>
               </div>
