@@ -11,8 +11,8 @@ interface SettingsContextType {
   updateInvoiceSettings: (updates: Partial<InvoiceSettings>) => Promise<void>;
   updateUserPreferences: (updates: Partial<UserPreferences>) => Promise<void>;
   updateSystemSettings: (updates: Partial<SystemSettings>) => Promise<void>;
-  formatCurrency: (amount: number) => string;
-  formatDate: (date: Date) => string;
+  formatCurrency: (amount: number) => Promise<string>;
+  formatDate: (date: Date) => Promise<string>;
   generateInvoiceNumber: () => Promise<string>;
 }
 
