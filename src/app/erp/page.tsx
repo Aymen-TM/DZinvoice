@@ -14,7 +14,6 @@ import {
 import { ERP_MENU_ITEMS, DEFAULT_CLIENT_FORM, DEFAULT_ARTICLE_FORM, DEFAULT_ACHAT_FORM } from '@/constants/erp';
 import localforage from 'localforage';
 import { generateInvoicePDF } from '@/utils/pdfGenerator';
-import { Suspense } from "react";
 import ERPTable from '@/components/ERPTable';
 import { useSettingsContext } from '@/components/SettingsProvider';
 
