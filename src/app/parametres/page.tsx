@@ -31,12 +31,17 @@ export default function ParametresPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const {
+    settings,
     isLoading,
     updateCompanySettings,
     updateInvoiceSettings,
     updateUserPreferences,
     updateSystemSettings,
+    saveAllSettings,
     exportSettings,
+    formatCurrency,
+    formatDate,
+    generateInvoiceNumber,
     companySettings,
     invoiceSettings,
     userPreferences,

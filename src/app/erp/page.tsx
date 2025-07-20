@@ -108,6 +108,22 @@ function AccueilERPTest() {
   // const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
   // const [columnDropdownOpen, setColumnDropdownOpen] = useState(false);
 
+  // Add state for formatted articles
+  const [formattedArticles, setFormattedArticles] = useState<string[]>([]);
+
+  // Precompute formatted currency for articles
+  useEffect(() => {
+    async function computeFormatted() {
+      if (!articles || articles.length === 0) {
+        setFormattedArticles([]);
+        return;
+      }
+      const formatted = await Promise.all(articles.map(a => formatCurrency(a.prixVente || 0)));
+      setFormattedArticles(formatted);
+    }
+    computeFormatted();
+  }, [articles, formatCurrency]);
+
   useEffect(() => {
     fetch('/codes_nomenclature.json')
       .then(res => res.json())
@@ -763,10 +779,10 @@ function AccueilERPTest() {
       case "articles":
         return {
           columns: ["Référence", "Désignation", "Prix Vente HT"],
-          rows: articles.map((a) => [
-            a.ref,
-            a.designation,
-            formatCurrency(a.prixVente)
+          rows: articles.map((a, idx) => [
+            a && typeof a === 'object' ? (a.ref || 'N/A') : 'N/A',
+            a && typeof a === 'object' ? (a.designation || 'N/A') : 'N/A',
+            formattedArticles[idx] || 'N/A'
           ]),
         };
       case "achat":
@@ -811,7 +827,7 @@ function AccueilERPTest() {
   };
 
   // Memoize columns and rows to prevent unnecessary re-renders
-  const { columns, rows } = useMemo(getTable, [activeMenu, clients, articles, achats, stock, ventes, formatCurrency]);
+  const { columns, rows } = useMemo(getTable, [activeMenu, clients, articles, achats, stock, ventes, formatCurrency, formattedArticles]);
   const filteredSortedRows = applyFiltersAndSorting(columns, rows);
   // Add state for column visibility after columns is defined
   const [visibleColumns, setVisibleColumns] = useState<string[]>(columns);
@@ -1031,7 +1047,7 @@ function AccueilERPTest() {
                 className={`px-3 sm:px-4 py-2.5 sm:py-2 font-semibold text-xs sm:text-sm rounded-xl transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 ${activeMenu === item.key ? "bg-[var(--primary)] text-white shadow" : "text-[var(--primary-dark)] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)]"}`}
                 onClick={() => {
                   setActiveMenu(item.key);
-                  router.push(`/erp?tab=${item.key}`);
+                  // router.push(`/erp?tab=${item.key}`); // Removed to prevent infinite navigation
                 }}
               >
                 {item.label}
@@ -1684,10 +1700,7 @@ function AccueilERPTest() {
   );
 }
 
-export default function ERPPageWithSuspense() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <AccueilERPTest />
-    </Suspense>
-  );
+// Remove Suspense wrapper and export AccueilERPTest directly
+export default function ERPPage() {
+  return <AccueilERPTest />;
 }
