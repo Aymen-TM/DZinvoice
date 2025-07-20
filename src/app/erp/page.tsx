@@ -110,6 +110,10 @@ function AccueilERPTest() {
   // Add state for formatted articles
   const [formattedArticles, setFormattedArticles] = useState<string[]>([]);
 
+  // Add state for formatted achats and ventes
+  const [formattedAchats, setFormattedAchats] = useState<string[][]>([]);
+  const [formattedVentes, setFormattedVentes] = useState<string[][]>([]);
+
   // Precompute formatted currency for articles
   useEffect(() => {
     async function computeFormatted() {
@@ -122,6 +126,38 @@ function AccueilERPTest() {
     }
     computeFormatted();
   }, [articles, formatCurrency]);
+
+  // Precompute formatted currency for achats
+  useEffect(() => {
+    async function computeFormattedAchats() {
+      if (!achats || achats.length === 0) {
+        setFormattedAchats([]);
+        return;
+      }
+      const formatted = await Promise.all(achats.map(async (a) => [
+        await formatCurrency(a.montant)
+      ]));
+      setFormattedAchats(formatted);
+    }
+    computeFormattedAchats();
+  }, [achats, formatCurrency]);
+
+  // Precompute formatted currency for ventes
+  useEffect(() => {
+    async function computeFormattedVentes() {
+      if (!ventes || ventes.length === 0) {
+        setFormattedVentes([]);
+        return;
+      }
+      const formatted = await Promise.all(ventes.map(async (v) => [
+        await formatCurrency(v.unitPrice || 0),
+        await formatCurrency(v.prixHT || 0),
+        await formatCurrency(v.montant || 0)
+      ]));
+      setFormattedVentes(formatted);
+    }
+    computeFormattedVentes();
+  }, [ventes, formatCurrency]);
 
   useEffect(() => {
     fetch('/codes_nomenclature.json')
@@ -787,11 +823,11 @@ function AccueilERPTest() {
       case "achat":
         return {
           columns: ["ID", "Fournisseur", "Date", "Montant"],
-          rows: achats.map((a) => [
+          rows: achats.map((a, idx) => [
             a.id.toString(),
             a.fournisseur,
             a.date,
-            formatCurrency(a.montant)
+            formattedAchats[idx]?.[0] || (a.montant?.toFixed(2) ?? 'N/A')
           ]),
         };
       case "stock":
@@ -807,18 +843,13 @@ function AccueilERPTest() {
       case "ventes":
         return {
           columns: ["Date", "Numéro Facture", "Prix H.T", "Montant Total HT", "Montant Total TTC"],
-          rows: ventes.map((v) => {
-            const prixHT = v.prixHT || 0;
-            const montant = v.montant || 0;
-            const unitPrice = v.unitPrice || 0;
-            return [
-              v.date,
-              v.id,
-                          formatCurrency(unitPrice),
-            formatCurrency(prixHT),
-            formatCurrency(montant)
-            ];
-          }),
+          rows: ventes.map((v, idx) => [
+            v.date,
+            v.id,
+            formattedVentes[idx]?.[0] || (v.unitPrice?.toFixed(2) ?? 'N/A'),
+            formattedVentes[idx]?.[1] || (v.prixHT?.toFixed(2) ?? 'N/A'),
+            formattedVentes[idx]?.[2] || (v.montant?.toFixed(2) ?? 'N/A')
+          ]),
         };
       default:
         return { columns: [], rows: [] };
@@ -826,7 +857,7 @@ function AccueilERPTest() {
   };
 
   // Memoize columns and rows to prevent unnecessary re-renders
-  const { columns, rows } = useMemo(getTable, [activeMenu, clients, articles, achats, stock, ventes, formatCurrency, formattedArticles]);
+  const { columns, rows } = useMemo(getTable, [activeMenu, clients, articles, achats, stock, ventes, formatCurrency, formattedArticles, formattedAchats, formattedVentes]);
   const filteredSortedRows = applyFiltersAndSorting(columns, rows);
   // Add state for column visibility after columns is defined
   const [visibleColumns, setVisibleColumns] = useState<string[]>(columns);
