@@ -16,6 +16,7 @@ import localforage from 'localforage';
 import { generateInvoicePDF } from '@/utils/pdfGenerator';
 import ERPTable from '@/components/ERPTable';
 import { useSettingsContext } from '@/components/SettingsProvider';
+import { Suspense } from "react";
 
 const TOOLBAR_BUTTONS = [
   { key: "new", label: "New" },
@@ -1732,5 +1733,9 @@ function AccueilERPTest() {
 
 // Remove Suspense wrapper and export AccueilERPTest directly
 export default function ERPPage() {
-  return <AccueilERPTest />;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AccueilERPTest />
+    </Suspense>
+  );
 }
