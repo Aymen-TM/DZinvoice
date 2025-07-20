@@ -27,6 +27,9 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
   // Add state for formatted amounts
   const [formattedAmounts, setFormattedAmounts] = useState<{ [key: string]: string }>({});
   const [formattedTotals, setFormattedTotals] = useState<{ [key: string]: string }>({});
+  // Add state for depot autocomplete
+  const [depotDropdown, setDepotDropdown] = useState<{ [key: string]: boolean }>({});
+  const [filteredDepots, setFilteredDepots] = useState<{ [key: string]: string[] }>({});
 
   // Helper function to format currency (async-aware)
   const formatAmount = (amount: number, key?: string) => {
@@ -165,6 +168,14 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
     });
     
     onItemsChange(updatedItems);
+  };
+
+  // Helper to filter depots for an item
+  const filterDepots = (itemId: string, search: string) => {
+    setFilteredDepots(prev => ({
+      ...prev,
+      [itemId]: depots.filter(d => d.toLowerCase().includes(search.toLowerCase()))
+    }));
   };
 
   // Calculate totals whenever items or remise changes
@@ -396,16 +407,41 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
                       </svg>
                       <span>Dépôt</span>
                     </label>
-                    <select
-                      value={item.depot || ''}
-                      onChange={e => updateItem(item.id, 'depot', e.target.value)}
-                      className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white"
-                    >
-                      <option value="">Sélectionner un dépôt</option>
-                      {depots.map(d => (
-                        <option key={d} value={d}>{d}</option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={item.depot || ''}
+                        placeholder="Entrer un dépôt..."
+                        onChange={e => {
+                          updateItem(item.id, 'depot', e.target.value);
+                          filterDepots(item.id, e.target.value);
+                          setDepotDropdown(prev => ({ ...prev, [item.id]: true }));
+                        }}
+                        onFocus={() => {
+                          filterDepots(item.id, item.depot || '');
+                          setDepotDropdown(prev => ({ ...prev, [item.id]: true }));
+                        }}
+                        onBlur={() => setTimeout(() => setDepotDropdown(prev => ({ ...prev, [item.id]: false })), 100)}
+                        className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white"
+                      />
+                      {depotDropdown[item.id] && filteredDepots[item.id]?.length > 0 && (
+                        <div className="absolute z-50 left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto mt-1">
+                          {filteredDepots[item.id].map(d => (
+                            <button
+                              key={d}
+                              type="button"
+                              className="w-full text-left px-4 py-2 hover:bg-orange-50"
+                              onClick={() => {
+                                updateItem(item.id, 'depot', d);
+                                setDepotDropdown(prev => ({ ...prev, [item.id]: false }));
+                              }}
+                            >
+                              {d}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   
                   {/* Price, Amount, and TVA Row */}
@@ -557,16 +593,41 @@ export default function ItemsList({ items, onItemsChange, totals, onTotalsChange
                   </div>
                   
                   <div className="col-span-2 group/item">
-                    <select
-                      value={item.depot || ''}
-                      onChange={e => updateItem(item.id, 'depot', e.target.value)}
-                      className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white group-hover/item:border-orange-300"
-                    >
-                      <option value="">Sélectionner un dépôt</option>
-                      {depots.map(d => (
-                        <option key={d} value={d}>{d}</option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={item.depot || ''}
+                        placeholder="Entrer un dépôt..."
+                        onChange={e => {
+                          updateItem(item.id, 'depot', e.target.value);
+                          filterDepots(item.id, e.target.value);
+                          setDepotDropdown(prev => ({ ...prev, [item.id]: true }));
+                        }}
+                        onFocus={() => {
+                          filterDepots(item.id, item.depot || '');
+                          setDepotDropdown(prev => ({ ...prev, [item.id]: true }));
+                        }}
+                        onBlur={() => setTimeout(() => setDepotDropdown(prev => ({ ...prev, [item.id]: false })), 100)}
+                        className="w-full px-3 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 bg-white/70 hover:bg-white/90 focus:bg-white"
+                      />
+                      {depotDropdown[item.id] && filteredDepots[item.id]?.length > 0 && (
+                        <div className="absolute z-50 left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto mt-1">
+                          {filteredDepots[item.id].map(d => (
+                            <button
+                              key={d}
+                              type="button"
+                              className="w-full text-left px-4 py-2 hover:bg-orange-50"
+                              onClick={() => {
+                                updateItem(item.id, 'depot', d);
+                                setDepotDropdown(prev => ({ ...prev, [item.id]: false }));
+                              }}
+                            >
+                              {d}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   
                   <div className="col-span-2 group/item">

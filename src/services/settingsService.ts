@@ -315,38 +315,36 @@ class SettingsService {
 
   public async generateInvoiceNumber(): Promise<string> {
     const prefix = await this.getInvoicePrefix();
-    
     try {
       // Import the getCompleteInvoices function dynamically to avoid SSR issues
       const { getCompleteInvoices } = await import('@/utils/invoiceStorage');
       const invoices = await getCompleteInvoices();
-      
       // Find the highest invoice number
       let maxNumber = 0;
       invoices.forEach(invoice => {
         const invoiceNumber = invoice.meta.invoiceNumber;
         if (invoiceNumber && invoiceNumber.startsWith(prefix)) {
-          // Extract the number part after the prefix
-          const numberPart = invoiceNumber.substring(prefix.length);
-          const number = parseInt(numberPart);
-          if (!isNaN(number) && number > maxNumber) {
-            maxNumber = number;
+          // Extract the number part after the prefix and dash
+          const match = invoiceNumber.match(new RegExp(`^${prefix}-?(\\d+)$`));
+          if (match) {
+            const number = parseInt(match[1]);
+            if (!isNaN(number) && number > maxNumber) {
+              maxNumber = number;
+            }
           }
         }
       });
-      
       // Increment the highest number
       const nextNumber = maxNumber + 1;
-      
       // Format with leading zeros (4 digits: 0001, 0002, etc.)
       const formattedNumber = nextNumber.toString().padStart(4, '0');
-      return `${prefix}${formattedNumber}`;
+      return `${prefix}-${formattedNumber}`;
     } catch (error) {
       console.error('Error generating invoice number:', error);
       // Fallback to timestamp-based number
       const timestamp = Date.now();
       const random = Math.floor(Math.random() * 1000);
-      return `${prefix}${timestamp}${random}`;
+      return `${prefix}-${timestamp}${random}`;
     }
   }
 }
